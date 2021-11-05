@@ -4,6 +4,8 @@ from roblox_studio.properties import PropertyType
 
 def main():
     studio_client = StudioClient()
+    print(studio_client.get_cached_fflags())
+    return
     settings = studio_client.get_settings()
     print(settings.to_xml())
     return
