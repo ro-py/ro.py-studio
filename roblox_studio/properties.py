@@ -6,7 +6,7 @@ from pathlib import Path
 class PropertyType(Enum):
     bool = "bool"
 
-    binary_string = "binarystring"
+    binary_string = "BinaryString"
     string = "string"
     token = "token"
 
@@ -15,12 +15,12 @@ class PropertyType(Enum):
     int = "int"
     int64 = "int64"
 
-    vector2 = "vector2"
-    vector3 = "vector3"
-    color3 = "color3"
+    vector2 = "Vector2"
+    vector3 = "Vector3"
+    color3 = "Color3"
 
-    qdir = "qdir"
-    qfont = "qfont"
+    qdir = "QDir"
+    qfont = "QFont"
 
 
 # types:
@@ -75,9 +75,9 @@ class PropertyColor3(Property):
     def __init__(self, tag: Tag):
         super().__init__(tag)
         self.value: Color3 = Color3(
-            r=float(tag.find("r").text),
-            g=float(tag.find("g").text),
-            b=float(tag.find("b").text)
+            r=float(tag.find("R").text),
+            g=float(tag.find("G").text),
+            b=float(tag.find("B").text)
         )
 
 
@@ -119,8 +119,8 @@ class PropertyVector2(Property):
     def __init__(self, tag: Tag):
         super().__init__(tag)
         self.value: Vector2 = Vector2(
-            x=float(tag.find("x").text),
-            y=float(tag.find("y").text)
+            x=float(tag.find("X").text),
+            y=float(tag.find("Y").text)
         )
 
 
@@ -128,9 +128,9 @@ class PropertyVector3(Property):
     def __init__(self, tag: Tag):
         super().__init__(tag)
         self.value: Vector3 = Vector3(
-            x=float(tag.find("x").text),
-            y=float(tag.find("y").text),
-            z=float(tag.find("z").text)
+            x=float(tag.find("X").text),
+            y=float(tag.find("Y").text),
+            z=float(tag.find("Z").text)
         )
 
 

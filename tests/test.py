@@ -8,7 +8,7 @@ def main():
     for item in settings.items:
         print(item.type)
         for property in item.properties:
-            print(f"\t{property.name}")
+            print(f"\t{property.name} {property.type}")
 
 
 if __name__ == "__main__":

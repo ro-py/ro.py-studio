@@ -18,7 +18,7 @@ class StudioClient:
         with open(self.paths.global_settings, "r") as file:
             soup = BeautifulSoup(
                 markup=file.read(),
-                features="lxml"
+                features="lxml-xml"
             )
             return Settings(soup)
 
@@ -26,6 +26,6 @@ class StudioClient:
         with open(self.paths.global_basic_settings, "r") as file:
             soup = BeautifulSoup(
                 markup=file.read(),
-                features="lxml"
+                features="xml"
             )
             return Settings(soup)
