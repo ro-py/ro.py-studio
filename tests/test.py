@@ -1,3 +1,13 @@
 from roblox_studio import StudioClient
-studio_client = StudioClient()
-print(studio_client.paths.local_storage)
+
+
+def main():
+    studio_client = StudioClient()
+    settings = studio_client.get_settings()
+    for item in settings.items:
+        print(item.referent)
+        print(item.type)
+
+
+if __name__ == "__main__":
+    main()

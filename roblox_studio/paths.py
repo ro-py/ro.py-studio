@@ -16,3 +16,6 @@ class StudioPaths:
         self.installed_plugins: Path = self.root / "InstalledPlugins"
         self.client_settings: Path = self.root / "ClientSettings"
 
+        # Subfiles
+        self.app_storage: Path = self.local_storage / "appStorage.json"
+        self.studio_app_settings: Path = self.client_settings / "StudioAppSettings.json"
