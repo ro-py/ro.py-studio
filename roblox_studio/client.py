@@ -4,7 +4,7 @@ from typing import Optional
 from bs4 import BeautifulSoup
 
 from .paths import StudioPaths
-from .settings import StudioSettings
+from .settings import Settings
 
 
 class StudioClient:
@@ -20,4 +20,4 @@ class StudioClient:
                 markup=file.read(),
                 features="lxml"
             )
-            return StudioSettings(soup)
+            return Settings(soup)
