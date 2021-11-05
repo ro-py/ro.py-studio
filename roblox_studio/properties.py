@@ -1,4 +1,5 @@
 from enum import Enum
+from bs4 import BeautifulSoup
 from bs4.element import Tag
 from pathlib import Path
 
@@ -21,6 +22,13 @@ class PropertyType(Enum):
 
     qdir = "QDir"
     qfont = "QFont"
+
+
+def decimal_if_needed(number: float):
+    if number.is_integer():
+        return str(int(number))
+    else:
+        return str(number)
 
 
 # types:
@@ -64,11 +72,18 @@ class Property:
     def __repr__(self):
         return f"<{self.__class__.__name__} name={self.name!r} type={self.type.name} value={self.value}>"
 
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        # fallback in case of issue
+        return [self.raw_value]
+
 
 class PropertyQDir(Property):
     def __init__(self, tag: Tag):
         super().__init__(tag)
         self.value: Path = Path(self.raw_value.strip())
+
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        return [self.value.as_posix()]
 
 
 class PropertyColor3(Property):
@@ -80,11 +95,25 @@ class PropertyColor3(Property):
             b=float(tag.find("B").text)
         )
 
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        r_element = soup.new_tag(name="R")
+        g_element = soup.new_tag(name="G")
+        b_element = soup.new_tag(name="B")
+
+        r_element.string = decimal_if_needed(self.value.r)
+        g_element.string = decimal_if_needed(self.value.g)
+        b_element.string = decimal_if_needed(self.value.b)
+
+        return [r_element, g_element, b_element]
+
 
 class PropertyInt(Property):
     def __init__(self, tag: Tag):
         super().__init__(tag)
         self.value: int = int(self.raw_value)
+
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        return [str(self.value)]
 
 
 class PropertyBool(Property):
@@ -92,11 +121,17 @@ class PropertyBool(Property):
         super().__init__(tag)
         self.value: bool = self.raw_value == "true"
 
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        return ["true" if self.value is True else "false"]
+
 
 class PropertyString(Property):
     def __init__(self, tag: Tag):
         super().__init__(tag)
         self.value: str = self.raw_value
+
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        return [self.value]
 
 
 class PropertyToken(Property):
@@ -108,11 +143,17 @@ class PropertyToken(Property):
         super().__init__(tag)
         self.value: int = int(self.raw_value)
 
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        return [str(self.value)]
+
 
 class PropertyFloat(Property):
     def __init__(self, tag: Tag):
         super().__init__(tag)
         self.value: float = float(self.raw_value)
+
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        return [decimal_if_needed(self.value)]
 
 
 class PropertyVector2(Property):
@@ -123,6 +164,15 @@ class PropertyVector2(Property):
             y=float(tag.find("Y").text)
         )
 
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        x_element = soup.new_tag(name="X")
+        y_element = soup.new_tag(name="Y")
+
+        x_element.string = decimal_if_needed(self.value.x)
+        y_element.string = decimal_if_needed(self.value.y)
+
+        return [x_element, y_element]
+
 
 class PropertyVector3(Property):
     def __init__(self, tag: Tag):
@@ -132,6 +182,17 @@ class PropertyVector3(Property):
             y=float(tag.find("Y").text),
             z=float(tag.find("Z").text)
         )
+
+    def to_elements(self, soup: BeautifulSoup) -> list:
+        x_element = soup.new_tag(name="X")
+        y_element = soup.new_tag(name="Y")
+        z_element = soup.new_tag(name="Z")
+
+        x_element.string = decimal_if_needed(self.value.x)
+        y_element.string = decimal_if_needed(self.value.y)
+        z_element.string = decimal_if_needed(self.value.z)
+
+        return [x_element, y_element, z_element]
 
 
 type_to_class = {

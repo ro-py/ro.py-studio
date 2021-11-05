@@ -31,3 +31,59 @@ class Settings:
         self.items: List[SettingsItem] = [
             SettingsItem(item_tag) for item_tag in item_tags
         ]
+
+    def to_soup(self):
+        soup = BeautifulSoup(features="lxml-xml")
+        soup.is_xml = False  # hack to stop it from adding xml tags
+
+        roblox_tag: Tag = soup.new_tag(
+            name="roblox",
+            attrs={
+                "xmlns:xmime": "http://www.w3.org/2005/05/xmlmime",
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xsi:noNamespaceSchemaLocation": "http://www.roblox.com/roblox.xsd",
+                "version": str(self.version)
+            }
+        )
+
+        external_1 = soup.new_tag(name="External")
+        external_1.string = "null"
+        external_2 = soup.new_tag(name="External")
+        external_2.string = "nil"
+
+        roblox_tag.append(external_1)
+        roblox_tag.append(external_2)
+
+        soup.append(roblox_tag)
+
+        for item in self.items:
+            item_tag = soup.new_tag(
+                name="Item",
+                attrs={
+                    "class": item.type,
+                    "referent": item.referent
+                }
+            )
+            properties_tag = soup.new_tag("Properties")
+
+            for property in item.properties:
+                property_tag = soup.new_tag(
+                    name=property.type.value,
+                    attrs={
+                        "name": property.name
+                    }
+                )
+
+                for element in property.to_elements(soup):
+                    property_tag.append(element)
+
+                properties_tag.append(property_tag)
+
+            item_tag.append(properties_tag)
+            roblox_tag.append(item_tag)
+
+        return soup
+
+    def to_xml(self):
+        soup = self.to_soup()
+        return str(soup)

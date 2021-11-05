@@ -5,6 +5,8 @@ from roblox_studio.properties import PropertyType
 def main():
     studio_client = StudioClient()
     settings = studio_client.get_settings()
+    print(settings.to_xml())
+    return
     for item in settings.items:
         print(item.type)
         for property in item.properties:

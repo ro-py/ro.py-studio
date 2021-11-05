@@ -8,13 +8,13 @@ from .settings import Settings
 
 
 class StudioClient:
-    def __init__(self, path: Optional[Path] = None):
+    def __init__(self, path: Optional[Path] = None) -> Settings:
         if path is None:
             path = Path(os.getenv("LocalAppData")) / "Roblox"
 
         self.paths = StudioPaths(path)
 
-    def get_settings(self):
+    def get_settings(self) -> Settings:
         with open(self.paths.global_settings, "r") as file:
             soup = BeautifulSoup(
                 markup=file.read(),
