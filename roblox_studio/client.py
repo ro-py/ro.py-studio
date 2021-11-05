@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 
 from .paths import StudioPaths
 from .settings import Settings
+from .storage import AppStorage
 
 import orjson
 
@@ -32,7 +33,13 @@ class StudioClient:
             )
             return Settings(soup)
 
-    def get_cached_fflags(self):
+    def get_cached_fflags(self) -> dict:
         with open(self.paths.studio_app_settings, "rb") as file:
             data = file.read()
             return orjson.loads(data)
+
+    def get_app_storage(self):
+        with open(self.paths.app_storage, "rb") as file:
+            data = file.read()
+            return AppStorage(orjson.loads(data))
+

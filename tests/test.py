@@ -4,15 +4,10 @@ from roblox_studio.properties import PropertyType
 
 def main():
     studio_client = StudioClient()
-    print(studio_client.get_cached_fflags())
-    return
-    settings = studio_client.get_settings()
-    print(settings.to_xml())
-    return
-    for item in settings.items:
-        print(item.type)
-        for property in item.properties:
-            print(f"\t{property.name} {property.type}")
+    app_storage = studio_client.get_app_storage()
+    print("Username:", app_storage.username)
+    print("Display Name:", app_storage.display_name)
+    print("User ID:", app_storage.user_id)
 
 
 if __name__ == "__main__":
