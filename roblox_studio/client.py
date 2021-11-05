@@ -21,3 +21,11 @@ class StudioClient:
                 features="lxml"
             )
             return Settings(soup)
+
+    def get_basic_settings(self):
+        with open(self.paths.global_basic_settings, "r") as file:
+            soup = BeautifulSoup(
+                markup=file.read(),
+                features="lxml"
+            )
+            return Settings(soup)
