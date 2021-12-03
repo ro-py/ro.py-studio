@@ -1,11 +1,13 @@
+import asyncio
 import os
 from pathlib import Path
-from bs4 import BeautifulSoup
+import winreg
 
 from .paths import StudioPaths
 from .settings import Settings
 from .storage import AppStorage
-from .registry import RobloxRegistryPaths, RobloxCorpRegistryPaths
+from .registry import RobloxRegistry, RobloxCorpRegistry
+from .environments import Environment
 
 import orjson
 import aiofiles
@@ -21,15 +23,15 @@ class StudioClient:
         if roblox_path is None:
             roblox_path = Path(os.getenv("LocalAppData")) / "Roblox"
 
-        if roblox_registry_location:
+        if roblox_registry_location is None:
             roblox_registry_location = r"SOFTWARE\Roblox"
 
         if roblox_corp_registry_location is None:
             roblox_corp_registry_location = r"SOFTWARE\ROBLOX Corporation"
 
-        self.paths = StudioPaths(roblox_path)
-        self.registry_paths: RobloxRegistryPaths(roblox_registry_location)
-        self.corp_registry_paths: RobloxCorpRegistryPaths(roblox_corp_registry_location)
+        self.paths: StudioPaths = StudioPaths(roblox_path)
+        self.registry: RobloxRegistry = RobloxRegistry(roblox_registry_location)
+        self.corp_registry: RobloxCorpRegistry = RobloxCorpRegistry(roblox_corp_registry_location)
 
     async def get_settings(self) -> Settings:
         async with aiofiles.open(
@@ -68,3 +70,39 @@ class StudioClient:
         ) as file:
             data = await file.read()
         return AppStorage(orjson.loads(data))
+
+    def _get_environments(self):
+        key = winreg.OpenKey(
+            key=winreg.HKEY_CURRENT_USER,
+            sub_key=self.corp_registry.environments,
+            reserved=0,
+            access=winreg.KEY_READ
+        )
+        item_index = 0
+        sub_names = []
+
+        while True:
+            try:
+                name, data, data_type = winreg.EnumValue(key, item_index)
+                sub_names.append(name)
+                item_index += 1
+            except EnvironmentError:
+                break
+
+        environments = []
+
+        for sub_name in sub_names:
+            environment_key = winreg.OpenKey(
+                key=winreg.HKEY_CURRENT_USER,
+                sub_key=self.corp_registry.environments + "\\" + sub_name,
+                reserved=0,
+                access=winreg.KEY_READ
+            )
+            environment = Environment(sub_name)
+            environment.load(environment_key)
+            environments.append(environment)
+
+        return environments
+
+    async def get_environments(self):
+        return await asyncio.get_event_loop().run_in_executor(None, self._get_environments)
