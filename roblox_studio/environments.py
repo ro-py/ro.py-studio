@@ -1,6 +1,10 @@
-import winreg
 from typing import Optional
+
+import winreg
+import aiofiles
+
 from .paths import StudioPaths
+from .settings import AppSettings
 
 
 def soft_query(key, name):
@@ -58,3 +62,16 @@ class Environment:
 
     def get_version_path(self):
         return self._paths.versions / self.version
+
+    def get_app_settings_path(self):
+        return self.get_version_path() / "AppSettings.xml"
+
+    async def get_app_settings(self):
+        async with aiofiles.open(
+                file=self.get_app_settings_path(),
+                mode="r"
+        ) as file:
+            data = await file.read()
+        app_settings = AppSettings()
+        await app_settings.from_xml(data)
+        return app_settings

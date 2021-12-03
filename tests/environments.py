@@ -10,6 +10,11 @@ async def main():
         print(f"\tVersion: {environment.version}")
         print(f"\tBootstrapper Path: {environment.bootstrapper_path}")
         print(f"\tPath: {environment.get_version_path()}")
+        app_settings = await environment.get_app_settings()
+        print("\tApp Settings:")
+        print(f"\t\tBase URL: {app_settings.base_url}")
+        print(f"\t\tContent Folder Name: {app_settings.content_folder_name}")
+        print(await app_settings.to_xml())
 
 
 if __name__ == "__main__":

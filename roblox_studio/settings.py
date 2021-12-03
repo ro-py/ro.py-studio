@@ -25,7 +25,7 @@ class SettingsItem:
                 self.properties.append(property_class(property_tag))
 
 
-def _from_xml(markup: str):
+def _settings_from_xml(markup: str):
     soup = BeautifulSoup(
         markup=markup,
         features="lxml-xml"
@@ -53,7 +53,7 @@ class Settings:
         self.items: List[SettingsItem] = []
 
     async def from_xml(self, markup: str):
-        self.version, self.items = await asyncio.get_event_loop().run_in_executor(None, _from_xml, markup)
+        self.version, self.items = await asyncio.get_event_loop().run_in_executor(None, _settings_from_xml, markup)
 
     def to_soup(self):
         soup = BeautifulSoup(features="lxml-xml")
@@ -105,6 +105,47 @@ class Settings:
             item_tag.append(properties_tag)
             roblox_tag.append(item_tag)
 
+        return soup
+
+    def _to_xml(self):
+        return str(self.to_soup())
+
+    async def to_xml(self):
+        return await asyncio.get_event_loop().run_in_executor(None, self._to_xml)
+
+
+class AppSettings:
+    def __init__(self):
+        self.content_folder_name: Optional[str] = None
+        self.base_url: Optional[str] = None
+
+    def _from_xml(self, markup: str):
+        soup = BeautifulSoup(
+            markup=markup,
+            features="lxml-xml"
+        )
+        settings_tag = soup.find("Settings")
+        self.content_folder_name = settings_tag.find("ContentFolder").text
+        self.base_url = settings_tag.find("BaseUrl").text
+
+    async def from_xml(self, markup: str):
+        await asyncio.get_event_loop().run_in_executor(None, self._from_xml, markup)
+
+    def to_soup(self):
+        soup = BeautifulSoup(features="lxml-xml")
+
+        settings_tag: Tag = soup.new_tag("Settings")
+
+        content_folder_tag: Tag = soup.new_tag("ContentFolder")
+        content_folder_tag.string = self.content_folder_name
+
+        base_url_tag: Tag = soup.new_tag("BaseUrl")
+        base_url_tag.string = self.base_url
+
+        settings_tag.append(content_folder_tag)
+        settings_tag.append(base_url_tag)
+
+        soup.append(settings_tag)
         return soup
 
     def _to_xml(self):

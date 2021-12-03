@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 import asyncio
 import os
 from pathlib import Path
@@ -101,5 +103,12 @@ class StudioClient:
 
         return environments
 
-    async def get_environments(self):
+    async def get_environments(self) -> List[Environment]:
         return await asyncio.get_event_loop().run_in_executor(None, self._get_environments)
+
+    async def get_studio_environment(self) -> Optional[Environment]:
+        environments = await self.get_environments()
+        for environment in environments:
+            if environment.name == "roblox-studio":
+                return environment
+        return None
