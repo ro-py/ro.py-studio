@@ -15,6 +15,7 @@ class StudioPaths:
         self.local_storage: Path = self.root / "LocalStorage"
         self.installed_plugins: Path = self.root / "InstalledPlugins"
         self.client_settings: Path = self.root / "ClientSettings"
+        self.versions: Path = self.root / "Versions"
 
         # Subfiles
         self.app_storage: Path = self.local_storage / "appStorage.json"

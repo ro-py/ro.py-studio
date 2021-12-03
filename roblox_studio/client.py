@@ -92,7 +92,10 @@ class StudioClient:
         environments = []
 
         for sub_name in sub_names:
-            environment = Environment(sub_name)
+            environment = Environment(
+                name=sub_name,
+                paths=self.paths
+            )
             environment.load(self.corp_registry.environments + "\\" + sub_name)
             environments.append(environment)
 

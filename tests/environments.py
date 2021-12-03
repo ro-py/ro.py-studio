@@ -9,6 +9,7 @@ async def main():
         print(environment.name)
         print(f"\tVersion: {environment.version}")
         print(f"\tBootstrapper Path: {environment.bootstrapper_path}")
+        print(f"\tPath: {environment.get_version_path()}")
 
 
 if __name__ == "__main__":

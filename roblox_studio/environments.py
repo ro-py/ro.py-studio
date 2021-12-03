@@ -1,5 +1,6 @@
 import winreg
 from typing import Optional
+from .paths import StudioPaths
 
 
 def soft_query(key, name):
@@ -18,7 +19,8 @@ def soft_query_ex(key, name):
 
 
 class Environment:
-    def __init__(self, name: str = None):
+    def __init__(self, name: str = None, paths: StudioPaths = None):
+        self._paths: StudioPaths = paths
         self.name: Optional[str] = name
 
         self.bootstrapper_path: Optional[str] = None
@@ -53,3 +55,6 @@ class Environment:
 
         self.protocol_handler_scheme, _ = soft_query_ex(key, "protocol handler scheme")
         self.version, _ = soft_query_ex(key, "version")
+
+    def get_version_path(self):
+        return self._paths.versions / self.version
