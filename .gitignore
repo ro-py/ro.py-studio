@@ -115,3 +115,6 @@ dmypy.json
 
 # PyCharm
 .idea/
+
+# jmk
+jmkdev_tests/

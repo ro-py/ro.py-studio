@@ -1,4 +1,5 @@
-from typing import List
+import asyncio
+from typing import List, Optional
 from bs4 import BeautifulSoup
 from bs4.element import Tag, ResultSet
 
@@ -6,12 +7,17 @@ from .properties import Property, PropertyType, type_to_class
 
 
 class SettingsItem:
-    def __init__(self, tag: Tag):
-        # TODO: reconsider calling this "type" instead of class
-        self.type: str = tag.get("class")
-        self.referent: str = tag.get("referent")
-        properties_tag = tag.find("Properties", recursive=False)
+    def __init__(self):
+        self.type: Optional[str] = None
+        self.referent: Optional[str] = None
         self.properties: List[Property] = []
+
+    def from_tag(self, tag: Tag):
+        # TODO: reconsider calling this "type" instead of class
+        self.type = tag.get("class")
+        self.referent = tag.get("referent")
+        properties_tag = tag.find("Properties", recursive=False)
+        self.properties = []
         for property_tag in properties_tag:
             if isinstance(property_tag, Tag):
                 property_type = PropertyType(property_tag.name)
@@ -19,18 +25,35 @@ class SettingsItem:
                 self.properties.append(property_class(property_tag))
 
 
+def _from_xml(markup: str):
+    soup = BeautifulSoup(
+        markup=markup,
+        features="lxml-xml"
+    )
+    roblox_tag: Tag = soup.find("roblox")
+    item_tags: ResultSet = roblox_tag.find_all("Item", recursive=False)
+    version = int(roblox_tag.get("version"))
+    items = []
+
+    for item_tag in item_tags:
+        settings_item = SettingsItem()
+        settings_item.from_tag(item_tag)
+        items.append(settings_item)
+
+    return version, items
+
+
 class Settings:
     """
     Represents a Roblox Studio XML settings file.
     """
-    def __init__(self, soup: BeautifulSoup):
-        roblox_tag: Tag = soup.find("roblox")
-        item_tags: ResultSet = roblox_tag.find_all("Item", recursive=False)
 
-        self.version: int = int(roblox_tag.get("version"))
-        self.items: List[SettingsItem] = [
-            SettingsItem(item_tag) for item_tag in item_tags
-        ]
+    def __init__(self):
+        self.version: Optional[int] = None
+        self.items: List[SettingsItem] = []
+
+    async def from_xml(self, markup: str):
+        self.version, self.items = await asyncio.get_event_loop().run_in_executor(None, _from_xml, markup)
 
     def to_soup(self):
         soup = BeautifulSoup(features="lxml-xml")
@@ -84,6 +107,8 @@ class Settings:
 
         return soup
 
-    def to_xml(self):
-        soup = self.to_soup()
-        return str(soup)
+    def _to_xml(self):
+        return str(self.to_soup())
+
+    async def to_xml(self):
+        return await asyncio.get_event_loop().run_in_executor(None, self._to_xml)
