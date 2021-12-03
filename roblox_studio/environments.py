@@ -78,6 +78,18 @@ class Environment:
         await app_settings.from_xml(data)
         return app_settings
 
+    async def get_fflag_overrides(self) -> Dict[str, Any]:
+        try:
+            client_settings_path = self.get_version_path() / "ClientSettings"
+
+            async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "rb") as client_app_settings_file:
+                fflag_overrides_json = await client_app_settings_file.read()
+
+            fflag_overrides = orjson.loads(fflag_overrides_json)
+            return fflag_overrides
+        except FileNotFoundError:
+            return {}
+
     async def set_fflag_overrides(self, fflag_overrides: Dict[str, Any]):
         client_settings_path = self.get_version_path() / "ClientSettings"
         try:
