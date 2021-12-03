@@ -2,6 +2,7 @@ import asyncio
 from typing import List, Optional
 from bs4 import BeautifulSoup
 from bs4.element import Tag, ResultSet
+from pathlib import Path
 
 from .properties import Property, PropertyType, type_to_class
 
@@ -115,7 +116,8 @@ class Settings:
 
 
 class AppSettings:
-    def __init__(self):
+    def __init__(self, version_path: Path):
+        self._version_path: Path = version_path
         self.content_folder_name: Optional[str] = None
         self.base_url: Optional[str] = None
 
@@ -153,3 +155,6 @@ class AppSettings:
 
     async def to_xml(self):
         return await asyncio.get_event_loop().run_in_executor(None, self._to_xml)
+
+    def get_content_folder(self):
+        return self._version_path / self.content_folder_name

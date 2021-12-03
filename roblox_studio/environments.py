@@ -1,7 +1,9 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 
+import orjson
 import winreg
 import aiofiles
+import aiofiles.os
 
 from .paths import StudioPaths
 from .settings import AppSettings
@@ -72,6 +74,18 @@ class Environment:
                 mode="r"
         ) as file:
             data = await file.read()
-        app_settings = AppSettings()
+        app_settings = AppSettings(self.get_version_path())
         await app_settings.from_xml(data)
         return app_settings
+
+    async def set_fflag_overrides(self, fflag_overrides: Dict[str, Any]):
+        client_settings_path = self.get_version_path() / "ClientSettings"
+        try:
+            await aiofiles.os.mkdir(client_settings_path)
+        except FileExistsError:
+            pass
+
+        fflag_overrides_json = orjson.dumps(fflag_overrides)
+
+        async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "wb") as client_app_settings_file:
+            await client_app_settings_file.write(fflag_overrides_json)

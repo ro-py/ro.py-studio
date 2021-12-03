@@ -13,8 +13,7 @@ async def main():
         app_settings = await environment.get_app_settings()
         print("\tApp Settings:")
         print(f"\t\tBase URL: {app_settings.base_url}")
-        print(f"\t\tContent Folder Name: {app_settings.content_folder_name}")
-        print(await app_settings.to_xml())
+        print(f"\t\tContent Folder: {app_settings.get_content_folder()}")
 
 
 if __name__ == "__main__":
