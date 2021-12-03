@@ -92,14 +92,8 @@ class StudioClient:
         environments = []
 
         for sub_name in sub_names:
-            environment_key = winreg.OpenKey(
-                key=winreg.HKEY_CURRENT_USER,
-                sub_key=self.corp_registry.environments + "\\" + sub_name,
-                reserved=0,
-                access=winreg.KEY_READ
-            )
             environment = Environment(sub_name)
-            environment.load(environment_key)
+            environment.load(self.corp_registry.environments + "\\" + sub_name)
             environments.append(environment)
 
         return environments
