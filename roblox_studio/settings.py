@@ -25,6 +25,13 @@ class SettingsItem:
                 property_class = type_to_class.get(property_type) or Property
                 self.properties.append(property_class(property_tag))
 
+    def get_property(self, name: str) -> Optional[Property]:
+        name = name.lower()
+        for property in self.properties:
+            if property.name.lower() == name:
+                return property
+        return None
+
 
 def _settings_from_xml(markup: str):
     soup = BeautifulSoup(
@@ -55,6 +62,13 @@ class Settings:
 
     async def from_xml(self, markup: str):
         self.version, self.items = await asyncio.get_event_loop().run_in_executor(None, _settings_from_xml, markup)
+
+    def get_item(self, type: str) -> Optional[SettingsItem]:
+        type = type.lower()
+        for item in self.items:
+            if item.type.lower() == type:
+                return item
+        return None
 
     def to_soup(self):
         soup = BeautifulSoup(features="lxml-xml")
