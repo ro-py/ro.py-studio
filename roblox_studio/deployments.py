@@ -37,6 +37,13 @@ class DeploymentPackage:
         self.compressed_size: int = int(lines[2])
         self.size: int = int(lines[3])
 
+    def get_url(self):
+        return self._shared.url_generator.get_url(
+            subdomain="s3",
+            base_url="amazonaws.com",
+            path=f"setup.{self._branch.value}.com/{self._deployment.version_hash}-{self.name}"
+        )
+
 
 class DeploymentPackages:
     def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, deployment: Deployment, packages_data: str):
@@ -74,7 +81,7 @@ class Deployment:
 
         if "git hash" in history_line:
             match = search(
-                r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file version: ([0123456789, ]*), git hash: ("
+                r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file version: ([0123456789, ]*), git hash: ?("
                 r"[^ ]*)",
                 string=history_line
             )
@@ -110,7 +117,7 @@ class Deployment:
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
 
-    async def get_packages(self):
+    async def get_packages(self) -> DeploymentPackages:
         packages_response = await self._shared.requests.get(
             url=self._shared.url_generator.get_url(
                 subdomain="s3",
