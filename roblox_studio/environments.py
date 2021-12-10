@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional, Dict, Any
 
 import orjson
@@ -24,6 +25,11 @@ def soft_query_ex(key, name):
         return None, None
 
 
+def soft_set_ex(key, name, type, value):
+    if value is not None:
+        winreg.SetValueEx(key, name, 0, type, value)
+
+
 class Environment:
     def __init__(self, name: str = None, paths: StudioPaths = None):
         self._paths: StudioPaths = paths
@@ -40,8 +46,11 @@ class Environment:
 
         self.protocol_handler_scheme: Optional[str] = None
         self.version: Optional[str] = None
+        self._key_path: Optional[str] = None
 
     def load(self, key_path):
+        self._key_path = key_path
+
         key = winreg.OpenKey(
             key=winreg.HKEY_CURRENT_USER,
             sub_key=key_path,
@@ -61,6 +70,8 @@ class Environment:
 
         self.protocol_handler_scheme, _ = soft_query_ex(key, "protocol handler scheme")
         self.version, _ = soft_query_ex(key, "version")
+
+        key.Close()
 
     def get_version_path(self):
         return self._paths.versions / self.version
@@ -101,3 +112,32 @@ class Environment:
 
         async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "wb") as client_app_settings_file:
             await client_app_settings_file.write(fflag_overrides_json)
+
+    def _save(self):
+        """
+        Saves this environment to the registry.
+        """
+        key = winreg.OpenKey(
+            key=winreg.HKEY_CURRENT_USER,
+            sub_key=self._key_path,
+            reserved=0,
+            access=winreg.KEY_SET_VALUE
+        )
+
+        winreg.SetValue(winreg.HKEY_CURRENT_USER, self._key_path, winreg.REG_SZ, self.bootstrapper_path)
+
+        soft_set_ex(key, "channel", winreg.REG_SZ, self.channel)
+
+        soft_set_ex(key, "curPlayerUrl", winreg.REG_SZ, self.current_player_url)
+        soft_set_ex(key, "curPlayerVer", winreg.REG_SZ, self.current_player_version)
+
+        soft_set_ex(key, "curQTStudioUrl", winreg.REG_SZ, self.current_qt_studio_url)
+        soft_set_ex(key, "curQTStudioVer", winreg.REG_SZ, self.current_qt_studio_version)
+
+        soft_set_ex(key, "protocol handler scheme", winreg.REG_SZ, self.protocol_handler_scheme)
+        soft_set_ex(key, "version", winreg.REG_SZ, self.version)
+
+        key.Close()
+
+    async def save(self):
+        await asyncio.get_event_loop().run_in_executor(None, self._save)
