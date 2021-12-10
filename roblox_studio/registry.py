@@ -1,7 +1,3 @@
-import asyncio
-import winreg
-
-
 class RobloxRegistry:
     def __init__(self, root_key: str):
         self.root = root_key
@@ -16,4 +12,3 @@ class RobloxCorpRegistry:
         self.root = root_key
         self.environments = self.root + r"\Environments"
         self.roblox = self.root + r"\Roblox"
-

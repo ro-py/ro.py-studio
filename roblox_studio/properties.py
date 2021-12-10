@@ -1,7 +1,8 @@
 from enum import Enum
+from pathlib import Path
+
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from pathlib import Path
 
 
 class PropertyType(Enum):

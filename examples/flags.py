@@ -1,4 +1,5 @@
 import asyncio
+
 from roblox_studio import StudioClient
 
 
@@ -8,6 +9,7 @@ async def main():
     fflag_overrides = await studio_environment.get_fflag_overrides()
     fflag_overrides["FFlagDebugDisplayFPS"] = True
     await studio_environment.set_fflag_overrides(fflag_overrides)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

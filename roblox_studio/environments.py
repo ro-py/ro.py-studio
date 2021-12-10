@@ -1,10 +1,10 @@
 import asyncio
+import winreg
 from typing import Optional, Dict, Any
 
-import orjson
-import winreg
 import aiofiles
 import aiofiles.os
+import orjson
 
 from .paths import StudioPaths
 from .settings import AppSettings

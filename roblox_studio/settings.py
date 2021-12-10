@@ -1,8 +1,9 @@
 import asyncio
+from pathlib import Path
 from typing import List, Optional
+
 from bs4 import BeautifulSoup
 from bs4.element import Tag, ResultSet
-from pathlib import Path
 
 from .properties import Property, PropertyType, type_to_class
 

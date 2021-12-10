@@ -1,18 +1,17 @@
-from typing import List, Optional
-
 import asyncio
 import os
-from pathlib import Path
 import winreg
+from pathlib import Path
+from typing import List, Optional
 
+import aiofiles
+import orjson
+
+from .environments import Environment
 from .paths import StudioPaths
+from .registry import RobloxRegistry, RobloxCorpRegistry
 from .settings import Settings
 from .storage import AppStorage
-from .registry import RobloxRegistry, RobloxCorpRegistry
-from .environments import Environment
-
-import orjson
-import aiofiles
 
 
 class StudioClient:
