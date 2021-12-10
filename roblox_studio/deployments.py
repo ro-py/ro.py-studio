@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
 from re import search
@@ -5,6 +7,7 @@ from typing import List, Optional, Union
 
 from dateutil.parser import parse
 from roblox import Client
+from roblox.utilities.shared import ClientSharedObject
 
 from .branches import RobloxBranch
 
@@ -23,8 +26,46 @@ class DeploymentType(Enum):
     windows_mfc_player_and_studio = "windows-mfc-player-and-studio"
 
 
+class DeploymentPackage:
+    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, deployment: Deployment, lines: List[str]):
+        self._branch: RobloxBranch = branch
+        self._shared: ClientSharedObject = shared
+        self._deployment: Deployment = deployment
+
+        self.name: str = lines[0]
+        self.md5: str = lines[1]
+        self.compressed_size: int = int(lines[2])
+        self.size: int = int(lines[3])
+
+
+class DeploymentPackages:
+    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, deployment: Deployment, packages_data: str):
+        self._branch: RobloxBranch = branch
+        self._shared: ClientSharedObject = shared
+        self._deployment: Deployment = deployment
+
+        self.packages: List[DeploymentPackage] = []
+
+        packages_lines = packages_data.splitlines()
+        packages_file_lines = packages_lines[1:]
+
+        self.version: str = packages_lines[0]
+
+        for i in range(0, len(packages_file_lines), 4):
+            file_lines = packages_file_lines[i:i + 4]
+            self.packages.append(DeploymentPackage(
+                shared=self._shared,
+                branch=self._branch,
+                deployment=self._deployment,
+                lines=file_lines
+            ))
+
+
 class Deployment:
-    def __init__(self, history_line: str):
+    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, history_line: str):
+        self._branch: RobloxBranch = branch
+        self._shared: ClientSharedObject = shared
+
         self.deployment_type: DeploymentType
         self.version_hash: str
         self.timestamp: datetime
@@ -69,9 +110,27 @@ class Deployment:
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
 
+    async def get_packages(self):
+        packages_response = await self._shared.requests.get(
+            url=self._shared.url_generator.get_url(
+                subdomain="s3",
+                base_url="amazonaws.com",
+                path=f"setup.{self._branch.value}.com/{self.version_hash}-rbxPkgManifest.txt"
+            )
+        )
+        return DeploymentPackages(
+            branch=self._branch,
+            shared=self._shared,
+            deployment=self,
+            packages_data=packages_response.text
+        )
+
 
 class DeploymentRevert:
-    def __init__(self, history_line: str):
+    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, history_line: str):
+        self._branch: RobloxBranch = branch
+        self._shared: ClientSharedObject = shared
+
         self.deployment_type: DeploymentType
         self.version_hash: str
         self.timestamp: datetime
@@ -95,7 +154,9 @@ class DeploymentRevert:
 
 
 class DeploymentHistory:
-    def __init__(self, history_data: str):
+    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, history_data: str):
+        self._shared: ClientSharedObject = shared
+        self._branch: RobloxBranch = branch
         self.history: List[Union[Deployment, DeploymentRevert]] = []
 
         history_split = history_data.splitlines()
@@ -113,9 +174,17 @@ class DeploymentHistory:
                     continue
 
                 if history_subline.startswith("New"):
-                    self.history.append(Deployment(history_subline))
+                    self.history.append(Deployment(
+                        shared=self._shared,
+                        branch=self._branch,
+                        history_line=history_subline
+                    ))
                 elif history_subline.startswith("Revert"):
-                    self.history.append(DeploymentRevert(history_subline))
+                    self.history.append(DeploymentRevert(
+                        shared=self._shared,
+                        branch=self._branch,
+                        history_line=history_subline
+                    ))
 
     def get_latest_version(self, deployment_type: DeploymentType) -> Optional[Deployment]:
         for deployment in reversed(self.history):
@@ -127,6 +196,7 @@ class DeploymentHistory:
 class DeploymentClient:
     def __init__(self, client: Client):
         self._roblox: Client = client
+        self._shared: ClientSharedObject = self._roblox._shared
 
     async def get_deployments(self, branch: RobloxBranch):
         history_response = await self._roblox.requests.get(
@@ -136,4 +206,8 @@ class DeploymentClient:
                 path=f"setup.{branch.value}.com/DeployHistory.txt"
             )
         )
-        return DeploymentHistory(history_response.text)
+        return DeploymentHistory(
+            shared=self._shared,
+            branch=branch,
+            history_data=history_response.text
+        )
