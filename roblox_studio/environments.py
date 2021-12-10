@@ -1,6 +1,7 @@
 import asyncio
 import winreg
 from typing import Optional, Dict, Any
+from pathlib import Path
 
 import aiofiles
 import aiofiles.os
@@ -30,7 +31,50 @@ def soft_set_ex(key, name, type, value):
         winreg.SetValueEx(key, name, 0, type, value)
 
 
-class Environment:
+class Version:
+    def __init__(self, path: Path, paths: StudioPaths):
+        self._path: Path = path
+        self._paths: StudioPaths = paths
+
+    def get_app_settings_path(self):
+        return self._path / "AppSettings.xml"
+
+    async def get_app_settings(self):
+        async with aiofiles.open(
+                file=self.get_app_settings_path(),
+                mode="r"
+        ) as file:
+            data = await file.read()
+        app_settings = AppSettings(self._path)
+        await app_settings.from_xml(data)
+        return app_settings
+
+    async def get_fflag_overrides(self) -> Dict[str, Any]:
+        try:
+            client_settings_path = self._path / "ClientSettings"
+
+            async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "rb") as client_app_settings_file:
+                fflag_overrides_json = await client_app_settings_file.read()
+
+            fflag_overrides = orjson.loads(fflag_overrides_json)
+            return fflag_overrides
+        except FileNotFoundError:
+            return {}
+
+    async def set_fflag_overrides(self, fflag_overrides: Dict[str, Any]):
+        client_settings_path = self._path / "ClientSettings"
+        try:
+            await aiofiles.os.mkdir(client_settings_path)
+        except FileExistsError:
+            pass
+
+        fflag_overrides_json = orjson.dumps(fflag_overrides)
+
+        async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "wb") as client_app_settings_file:
+            await client_app_settings_file.write(fflag_overrides_json)
+
+
+class Environment(Version):
     def __init__(self, name: str = None, paths: StudioPaths = None):
         self._paths: StudioPaths = paths
         self.name: Optional[str] = name
@@ -47,6 +91,11 @@ class Environment:
         self.protocol_handler_scheme: Optional[str] = None
         self.version: Optional[str] = None
         self._key_path: Optional[str] = None
+
+        super().__init__(
+            path=self.get_version_path(),
+            paths=self._paths
+        )
 
     def load(self, key_path):
         self._key_path = key_path
@@ -75,43 +124,6 @@ class Environment:
 
     def get_version_path(self):
         return self._paths.versions / self.version
-
-    def get_app_settings_path(self):
-        return self.get_version_path() / "AppSettings.xml"
-
-    async def get_app_settings(self):
-        async with aiofiles.open(
-                file=self.get_app_settings_path(),
-                mode="r"
-        ) as file:
-            data = await file.read()
-        app_settings = AppSettings(self.get_version_path())
-        await app_settings.from_xml(data)
-        return app_settings
-
-    async def get_fflag_overrides(self) -> Dict[str, Any]:
-        try:
-            client_settings_path = self.get_version_path() / "ClientSettings"
-
-            async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "rb") as client_app_settings_file:
-                fflag_overrides_json = await client_app_settings_file.read()
-
-            fflag_overrides = orjson.loads(fflag_overrides_json)
-            return fflag_overrides
-        except FileNotFoundError:
-            return {}
-
-    async def set_fflag_overrides(self, fflag_overrides: Dict[str, Any]):
-        client_settings_path = self.get_version_path() / "ClientSettings"
-        try:
-            await aiofiles.os.mkdir(client_settings_path)
-        except FileExistsError:
-            pass
-
-        fflag_overrides_json = orjson.dumps(fflag_overrides)
-
-        async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "wb") as client_app_settings_file:
-            await client_app_settings_file.write(fflag_overrides_json)
 
     def _save(self):
         """

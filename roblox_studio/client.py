@@ -7,7 +7,7 @@ from typing import List, Optional
 import aiofiles
 import orjson
 
-from .environments import Environment
+from .environments import Environment, Version
 from .paths import StudioPaths
 from .registry import RobloxRegistry, RobloxCorpRegistry
 from .settings import Settings
@@ -111,3 +111,9 @@ class StudioClient:
             if environment.name == "roblox-studio":
                 return environment
         return None
+
+    def get_version(self, path: Path) -> Version:
+        return Version(
+            path=path,
+            paths=self.paths
+        )
