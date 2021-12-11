@@ -95,7 +95,7 @@ class Deployment:
             self.git_hash = match.group(6)
         elif "file version" in history_line or "file verion" in history_line:
             match = search(
-                r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file vers?ion: ([0123456789, ]*)",
+                r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file vers?ion: ?([0123456789, ]*)",
                 string=history_line
             )
 
