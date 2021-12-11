@@ -1,7 +1,7 @@
 import asyncio
 import winreg
-from typing import Optional, Dict, Any
 from pathlib import Path
+from typing import Optional, Dict, Any
 
 import aiofiles
 import aiofiles.os
