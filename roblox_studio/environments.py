@@ -1,5 +1,9 @@
+import os
 import asyncio
-import winreg
+
+if os.name == "nt":
+    import winreg
+
 from pathlib import Path
 from typing import Optional, Dict, Any
 

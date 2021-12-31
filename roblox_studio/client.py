@@ -1,6 +1,9 @@
 import asyncio
 import os
-import winreg
+
+if os.name == "nt":
+    import winreg
+
 from pathlib import Path
 from typing import List, Optional
 
@@ -22,7 +25,10 @@ class StudioClient:
             roblox_corp_registry_location: str = None,
     ):
         if roblox_path is None:
-            roblox_path = Path(os.getenv("LocalAppData")) / "Roblox"
+            if os.name == "nt":
+                roblox_path = Path(os.getenv("LocalAppData")) / "Roblox"
+            else:
+                roblox_path = Path("~/Library").expanduser() / "Roblox"
 
         if roblox_registry_location is None:
             roblox_registry_location = r"SOFTWARE\Roblox"
@@ -72,6 +78,7 @@ class StudioClient:
             data = await file.read()
         return AppStorage(orjson.loads(data))
 
+    """
     def _get_environments(self):
         key = winreg.OpenKey(
             key=winreg.HKEY_CURRENT_USER,
@@ -111,6 +118,7 @@ class StudioClient:
             if environment.name == "roblox-studio":
                 return environment
         return None
+    """
 
     def get_version(self, path: Path) -> Version:
         return Version(
