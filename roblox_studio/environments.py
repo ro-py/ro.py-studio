@@ -1,8 +1,3 @@
-import os
-
-if os.name == "nt":
-    import winreg
-
 from pathlib import Path
 from typing import Dict, Any
 
@@ -12,26 +7,6 @@ import orjson
 
 from .paths import StudioPaths
 from .settings import AppSettings
-
-
-def soft_query(key, name):
-    try:
-        return winreg.QueryValue(key, name)
-    except FileNotFoundError:
-        return None
-
-
-def soft_query_ex(key, name):
-    try:
-        value, value_type = winreg.QueryValueEx(key, name)
-        return value, value_type
-    except FileNotFoundError:
-        return None, None
-
-
-def soft_set_ex(key, name, type, value):
-    if value is not None:
-        winreg.SetValueEx(key, name, 0, type, value)
 
 
 class Version:
