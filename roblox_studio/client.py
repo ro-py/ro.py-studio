@@ -1,16 +1,10 @@
-import asyncio
 import os
-
-if os.name == "nt":
-    import winreg
-
 from pathlib import Path
-from typing import List, Optional
 
 import aiofiles
 import orjson
 
-from .environments import Environment, Version
+from .environments import Version
 from .paths import StudioPaths
 from .registry import RobloxRegistry, RobloxCorpRegistry
 from .settings import Settings
@@ -77,48 +71,6 @@ class StudioClient:
         ) as file:
             data = await file.read()
         return AppStorage(orjson.loads(data))
-
-    """
-    def _get_environments(self):
-        key = winreg.OpenKey(
-            key=winreg.HKEY_CURRENT_USER,
-            sub_key=self.corp_registry.environments,
-            reserved=0,
-            access=winreg.KEY_READ
-        )
-        item_index = 0
-        sub_names = []
-
-        while True:
-            try:
-                name, data, data_type = winreg.EnumValue(key, item_index)
-                sub_names.append(name)
-                item_index += 1
-            except EnvironmentError:
-                break
-
-        environments = []
-
-        for sub_name in sub_names:
-            environment = Environment(
-                name=sub_name,
-                paths=self.paths
-            )
-            environment.load(self.corp_registry.environments + "\\" + sub_name)
-            environments.append(environment)
-
-        return environments
-
-    async def get_environments(self) -> List[Environment]:
-        return await asyncio.get_event_loop().run_in_executor(None, self._get_environments)
-
-    async def get_studio_environment(self) -> Optional[Environment]:
-        environments = await self.get_environments()
-        for environment in environments:
-            if environment.name == "roblox-studio":
-                return environment
-        return None
-    """
 
     def get_version(self, path: Path) -> Version:
         return Version(
