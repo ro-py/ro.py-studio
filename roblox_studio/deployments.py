@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from re import search
+from re import compile
 from typing import List, Optional, Union
 
 from dateutil.parser import parse
@@ -10,6 +10,14 @@ from roblox import Client
 from roblox.utilities.shared import ClientSharedObject
 
 from .branches import RobloxBranch
+
+git_hash_pattern = compile(r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file version: ([0123456789, ]*), "
+                           r"git hash: ?([^ ]*)")
+file_version_pattern = compile(r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file vers?ion: ?([0123456789, ]*)")
+fallback_pattern = compile(r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*)")
+
+reverting_pattern = compile(r"Reverting ([^ ]*?) to version (version-[^ ]*) at ([^ ]*) (.*)")
+revert_pattern = compile(r"Revert ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*)")
 
 
 class DeploymentType(Enum):
@@ -80,11 +88,7 @@ class Deployment:
         self.git_hash: Optional[str] = None
 
         if "git hash" in history_line:
-            match = search(
-                r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file version: ([0123456789, ]*), git hash: ?("
-                r"[^ ]*)",
-                string=history_line
-            )
+            match = git_hash_pattern.search(string=history_line)
 
             self.deployment_type = DeploymentType(match.group(1))
             self.version_hash = match.group(2)
@@ -94,10 +98,7 @@ class Deployment:
             self.bootstrapper_version = match.group(5)
             self.git_hash = match.group(6)
         elif "file version" in history_line or "file verion" in history_line:
-            match = search(
-                r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file vers?ion: ?([0123456789, ]*)",
-                string=history_line
-            )
+            match = file_version_pattern.search(string=history_line)
 
             self.deployment_type = DeploymentType(match.group(1))
             self.version_hash = match.group(2)
@@ -106,10 +107,7 @@ class Deployment:
             self.timestamp = parse(f"{date_string} {time_string}")
             self.bootstrapper_version = match.group(5)
         else:
-            match = search(
-                r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*)",
-                string=history_line
-            )
+            match = fallback_pattern.search(string=history_line)
 
             self.deployment_type = DeploymentType(match.group(1))
             self.version_hash = match.group(2)
@@ -145,14 +143,14 @@ class DeploymentRevert:
         self.git_hash: Optional[str] = None
 
         if history_line.startswith("Reverting"):
-            match = search(r"Reverting ([^ ]*?) to version (version-[^ ]*) at ([^ ]*) (.*)", history_line)
+            match = reverting_pattern.search(history_line)
             self.deployment_type = DeploymentType(match.group(1))
             self.version_hash = match.group(2)
             date_string = match.group(3)
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
         else:
-            match = search(r"Revert ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*)", history_line)
+            match = revert_pattern.search(history_line)
             self.deployment_type = DeploymentType(match.group(1))
             self.version_hash = match.group(2)
             date_string = match.group(3)
