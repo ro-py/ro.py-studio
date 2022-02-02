@@ -9,6 +9,7 @@ from .paths import StudioPaths
 from .registry import RobloxRegistry, RobloxCorpRegistry
 from .settings import Settings
 from .storage import AppStorage
+from .flags import FlagContainer
 
 
 class StudioClient:
@@ -56,13 +57,13 @@ class StudioClient:
         await settings.from_xml(markup)
         return settings
 
-    async def get_cached_fflags(self) -> dict:
+    async def get_cached_fflags(self) -> FlagContainer:
         async with aiofiles.open(
                 file=self.paths.studio_app_settings,
                 mode="rb"
         ) as file:
             data = await file.read()
-        return orjson.loads(data)
+        return FlagContainer.from_raw_dict(orjson.loads(data))
 
     async def get_app_storage(self):
         async with aiofiles.open(
