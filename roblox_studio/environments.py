@@ -16,52 +16,64 @@ class Version:
         self._paths: StudioPaths = paths
 
     @property
-    def app_settings_path(self):
+    def app_settings_file_path(self):
         return self.path / "AppSettings.xml"
 
     @property
-    def content_path(self):
+    def content_folder_path(self):
         return self.path / "content"
 
     @property
-    def extra_content_path(self):
+    def extra_content_folder_path(self):
         return self.path / "ExtraContent"
 
     @property
-    def platform_content_path(self):
+    def platform_content_folder_path(self):
         return self.path / "PlatformContent"
 
     @property
-    def built_in_plugins_path(self):
+    def built_in_plugins_folder_path(self):
         return self.path / "BuiltInPlugins"
 
     @property
-    def built_in_standalone_plugins_path(self):
+    def built_in_standalone_plugins_folder_path(self):
         return self.path / "BuiltInStandalonePlugins"
 
     @property
-    def plugins_path(self):
+    def plugins_folder_path(self):
         return self.path / "Plugins"
 
     @property
-    def qml_path(self):
+    def qml_folder_path(self):
         return self.path / "Qml"
 
     @property
-    def shaders_path(self):
+    def shaders_folder_path(self):
         return self.path / "shaders"
 
     @property
-    def ssl_path(self):
+    def ssl_folder_path(self):
         return self.path / "ssl"
 
     @property
-    def studio_fonts_path(self):
+    def cacert_file_path(self):
+        return self.ssl_folder_path / "cacert.pem"
+
+    @property
+    def studio_fonts_folder_path(self):
         return self.path / "StudioFonts"
+
+    @property
+    def client_settings_folder_path(self):
+        return self.path / "ClientSettings"
+
+    @property
+    def client_app_settings_file_path(self):
+        return self.client_settings_folder_path / "ClientAppSettings.json"
 
     async def get_app_settings(self):
         async with aiofiles.open(
-                file=self.app_settings_path,
+                file=self.app_settings_file_path,
                 mode="r"
         ) as file:
             data = await file.read()
@@ -71,9 +83,7 @@ class Version:
 
     async def get_fflag_overrides(self) -> Dict[str, Any]:
         try:
-            client_settings_path = self.path / "ClientSettings"
-
-            async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "rb") as client_app_settings_file:
+            async with aiofiles.open(self.client_app_settings_file_path, "rb") as client_app_settings_file:
                 fflag_overrides_json = await client_app_settings_file.read()
 
             return orjson.loads(fflag_overrides_json)
@@ -81,13 +91,13 @@ class Version:
             return {}
 
     async def set_fflag_overrides(self, overrides: Dict[str, Any]):
-        client_settings_path = self.path / "ClientSettings"
         try:
-            await aiofiles.os.mkdir(client_settings_path)
+            await aiofiles.os.mkdir(self.client_settings_folder_path)
         except FileExistsError:
             pass
 
         fflag_overrides_json = orjson.dumps(overrides)
 
-        async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "wb") as client_app_settings_file:
+        async with aiofiles.open(self.client_app_settings_file_path, "wb") \
+                as client_app_settings_file:
             await client_app_settings_file.write(fflag_overrides_json)
