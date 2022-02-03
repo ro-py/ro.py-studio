@@ -8,7 +8,6 @@ import orjson
 
 from .paths import StudioPaths
 from .settings import AppSettings
-from .flags import FlagContainer
 
 
 class Version:

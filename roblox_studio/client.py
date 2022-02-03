@@ -10,7 +10,6 @@ from .paths import StudioPaths
 from .registry import RobloxRegistry, RobloxCorpRegistry
 from .settings import Settings
 from .storage import AppStorage
-from .flags import FlagContainer
 
 
 class StudioClient:
