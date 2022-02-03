@@ -51,7 +51,7 @@ class GenericFlag(BaseModel):
     kind: Optional[FlagKind]  # only optional because of stupid
     type: Optional[FlagType]
     name: str
-    filter: None
+    filter: Optional[None]
     value: Any
 
     def get_raw_name(self):

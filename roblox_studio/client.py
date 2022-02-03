@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Dict, Any
 
 import aiofiles
 import orjson
@@ -57,13 +58,13 @@ class StudioClient:
         await settings.from_xml(markup)
         return settings
 
-    async def get_cached_fflags(self) -> FlagContainer:
+    async def get_cached_fflags(self) -> Dict[str, Any]:
         async with aiofiles.open(
                 file=self.paths.studio_app_settings,
                 mode="rb"
         ) as file:
             data = await file.read()
-        return FlagContainer.from_raw_dict(orjson.loads(data))
+        return orjson.loads(data)
 
     async def get_app_storage(self):
         async with aiofiles.open(

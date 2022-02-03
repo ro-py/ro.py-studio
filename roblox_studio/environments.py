@@ -70,26 +70,25 @@ class Version:
         await app_settings.from_xml(data)
         return app_settings
 
-    async def get_fflag_overrides(self) -> FlagContainer:
+    async def get_fflag_overrides(self) -> Dict[str, Any]:
         try:
             client_settings_path = self.path / "ClientSettings"
 
             async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "rb") as client_app_settings_file:
                 fflag_overrides_json = await client_app_settings_file.read()
 
-            fflag_overrides = orjson.loads(fflag_overrides_json)
-            return FlagContainer.from_raw_dict(fflag_overrides)
+            return orjson.loads(fflag_overrides_json)
         except FileNotFoundError:
-            return FlagContainer(flags=[])
+            return {}
 
-    async def set_fflag_overrides(self, flag_container: FlagContainer):
+    async def set_fflag_overrides(self, overrides: Dict[str, Any]):
         client_settings_path = self.path / "ClientSettings"
         try:
             await aiofiles.os.mkdir(client_settings_path)
         except FileExistsError:
             pass
 
-        fflag_overrides_json = orjson.dumps(flag_container.to_raw_dict())
+        fflag_overrides_json = orjson.dumps(overrides)
 
         async with aiofiles.open(client_settings_path / "ClientAppSettings.json", "wb") as client_app_settings_file:
             await client_app_settings_file.write(fflag_overrides_json)
