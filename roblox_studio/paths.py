@@ -1,4 +1,8 @@
+import os
 from pathlib import Path
+
+is_windows = os.name == "nt"
+is_posix = os.name == "posix"
 
 
 class StudioPaths:

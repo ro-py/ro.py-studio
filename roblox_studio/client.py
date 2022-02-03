@@ -7,7 +7,6 @@ import orjson
 
 from .environments import Version
 from .paths import StudioPaths
-from .registry import RobloxRegistry, RobloxCorpRegistry
 from .settings import Settings
 from .storage import AppStorage
 
@@ -16,8 +15,6 @@ class StudioClient:
     def __init__(
             self,
             roblox_path: Path = None,
-            roblox_registry_location: str = None,
-            roblox_corp_registry_location: str = None,
     ):
         if roblox_path is None:
             if os.name == "nt":
@@ -25,15 +22,7 @@ class StudioClient:
             else:
                 roblox_path = Path("~/Library").expanduser() / "Roblox"
 
-        if roblox_registry_location is None:
-            roblox_registry_location = r"SOFTWARE\Roblox"
-
-        if roblox_corp_registry_location is None:
-            roblox_corp_registry_location = r"SOFTWARE\ROBLOX Corporation"
-
         self.paths: StudioPaths = StudioPaths(roblox_path)
-        self.registry: RobloxRegistry = RobloxRegistry(roblox_registry_location)
-        self.corp_registry: RobloxCorpRegistry = RobloxCorpRegistry(roblox_corp_registry_location)
 
     async def get_settings(self) -> Settings:
         async with aiofiles.open(
