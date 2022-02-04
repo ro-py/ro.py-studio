@@ -123,6 +123,7 @@ class Deployment:
                 path=f"setup.{self._branch.value}.com/{self.version_hash}-rbxPkgManifest.txt"
             )
         )
+
         return DeploymentPackages(
             branch=self._branch,
             shared=self._shared,

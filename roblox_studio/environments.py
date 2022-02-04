@@ -2,9 +2,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, Any
 
-import aiofiles
-import aiofiles.os
-
+import os
 import orjson
 
 from .paths import StudioPaths
@@ -105,23 +103,28 @@ class Version:
     def ribbon_file_path(self):
         return self._root_resources_path / "RobloxStudioRibbon.xml"
 
-    async def get_fflag_overrides(self) -> Dict[str, Any]:
+    def get_fflag_overrides(self) -> Dict[str, Any]:
         try:
-            async with aiofiles.open(self.client_app_settings_file_path, "rb") as client_app_settings_file:
-                fflag_overrides_json = await client_app_settings_file.read()
+            with open(
+                    file=self.client_app_settings_file_path,
+                    mode="rb"
+            ) as client_app_settings_file:
+                data = client_app_settings_file.read()
 
-            return orjson.loads(fflag_overrides_json)
+            return orjson.loads(data)
         except FileNotFoundError:
             return {}
 
-    async def set_fflag_overrides(self, overrides: Dict[str, Any]):
+    def set_fflag_overrides(self, overrides: Dict[str, Any]):
         try:
-            await aiofiles.os.mkdir(self.client_settings_folder_path)
+            os.mkdir(self.client_settings_folder_path)
         except FileExistsError:
             pass
 
         fflag_overrides_json = orjson.dumps(overrides)
 
-        async with aiofiles.open(self.client_app_settings_file_path, "wb") \
-                as client_app_settings_file:
-            await client_app_settings_file.write(fflag_overrides_json)
+        with aiofiles.open(
+            file=self.client_app_settings_file_path,
+            mode="wb"
+        ) as client_app_settings_file:
+            client_app_settings_file.write(fflag_overrides_json)

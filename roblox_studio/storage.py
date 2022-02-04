@@ -44,7 +44,7 @@ class AppStorage:
         # rethink where to do these orjson loads. this is probably bad
         self.policy_service_http_response: Optional[PolicyServiceHttpResponse] = \
             PolicyServiceHttpResponse(orjson.loads(data["PolicyServiceHttpResponse"])) \
-                if data.get("PolicyServiceHttpResponse") else None
+            if data.get("PolicyServiceHttpResponse") else None
 
         self.player_exe_launch_time: Optional[int] = int_or_none(data.get("PlayerExeLaunchTime"))
         self.user_id: Optional[int] = int_or_none(data.get("UserId"))
@@ -58,4 +58,4 @@ class AppStorage:
         self.experience_menu_version: Optional[str] = data.get("ExperienceMenuVersion")
         self.native_close_lua_prompt_display_count: Optional[dict] = \
             orjson.loads(data["NativeCloseLuaPromptDisplayCount"]) if data.get("NativeCloseLuaPromptDisplayCount") \
-                else None
+            else None

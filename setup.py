@@ -32,8 +32,7 @@ setup_info = {
     "install_requires": [
         "roblox>=2.0.0",
         "orjson>=3.0.0",
-        "aiofiles>=0.8.0",
-        "beautifulsoup4>=4.9.0"
+        "pydantic>=1.9.0"
     ]
 }
 

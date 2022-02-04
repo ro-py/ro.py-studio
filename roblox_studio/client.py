@@ -26,20 +26,20 @@ class StudioClient:
 
         self.paths: StudioPaths = StudioPaths(roblox_path)
 
-    async def get_cached_fflags(self) -> Dict[str, Any]:
-        async with aiofiles.open(
-                file=self.paths.studio_app_settings,
-                mode="rb"
+    def get_cached_fflags(self) -> Dict[str, Any]:
+        with open(
+            file=self.paths.studio_app_settings,
+            mode="rb"
         ) as file:
-            data = await file.read()
+            data = file.read()
         return orjson.loads(data)
 
-    async def get_app_storage(self):
-        async with aiofiles.open(
-                file=self.paths.app_storage,
-                mode="rb"
+    def get_app_storage(self):
+        with aiofiles.open(
+            file=self.paths.app_storage,
+            mode="rb"
         ) as file:
-            data = await file.read()
+            data = file.read()
         return AppStorage(orjson.loads(data))
 
     def get_version(self, path: Path, version_type: Optional[VersionType] = None) -> Version:
