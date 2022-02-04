@@ -1,9 +1,6 @@
 import os
 from pathlib import Path
 
-is_windows = os.name == "nt"
-is_posix = os.name == "posix"
-
 
 class StudioPaths:
     def __init__(self, root_path: Path):

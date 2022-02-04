@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 from typing import Dict, Any
 
@@ -10,38 +11,64 @@ from .paths import StudioPaths
 from .settings import AppSettings
 
 
+class VersionType(Enum):
+    windows = "windows"
+    """A Windows studio version.
+    It contains the executable file (RobloxStudioBeta.exe) and is commonly located in %LocalAppData%/Roblox/Versions.
+    """
+    macos = "macos"
+    """A macOS studio version.
+    It should be an .app folder and contain a folder "Contents" with a file called "Info.plist".
+    It is commonly located in ~/Applications."""
+
+
 class Version:
-    def __init__(self, path: Path, paths: StudioPaths):
+    def __init__(self, path: Path, paths: StudioPaths, version_type: VersionType):
         self.path: Path = path
+        self.version_type: VersionType = version_type
         self._paths: StudioPaths = paths
 
     @property
     def app_settings_file_path(self):
-        return self.path / "AppSettings.xml"
+        return self._root_resources_path / "AppSettings.xml"
+
+    @property
+    def _root_resources_path(self):
+        if self.version_type == VersionType.macos:
+            return self.path / "Contents" / "Resources"
+        else:
+            return self.path
+
+    @property
+    def _root_executables_path(self):
+        if self.version_type == VersionType.macos:
+            return self.path / "Contents" / "MacOS"
+        else:
+            return self.path
 
     @property
     def content_folder_path(self):
-        return self.path / "content"
+        return self._root_resources_path / "content"
 
     @property
     def extra_content_folder_path(self):
-        return self.path / "ExtraContent"
+        return self._root_resources_path / "ExtraContent"
 
     @property
     def platform_content_folder_path(self):
-        return self.path / "PlatformContent"
+        return self._root_resources_path / "PlatformContent"
 
     @property
     def built_in_plugins_folder_path(self):
-        return self.path / "BuiltInPlugins"
+        return self._root_resources_path / "BuiltInPlugins"
 
     @property
     def built_in_standalone_plugins_folder_path(self):
-        return self.path / "BuiltInStandalonePlugins"
+        return self._root_resources_path / "BuiltInStandalonePlugins"
 
     @property
     def plugins_folder_path(self):
-        return self.path / "Plugins"
+        return self._root_resources_path / "Plugins"
 
     @property
     def qml_folder_path(self):
@@ -49,11 +76,11 @@ class Version:
 
     @property
     def shaders_folder_path(self):
-        return self.path / "shaders"
+        return self._root_resources_path / "shaders"
 
     @property
     def ssl_folder_path(self):
-        return self.path / "ssl"
+        return self._root_resources_path / "ssl"
 
     @property
     def cacert_file_path(self):
@@ -61,15 +88,23 @@ class Version:
 
     @property
     def studio_fonts_folder_path(self):
-        return self.path / "StudioFonts"
+        return self._root_resources_path / "StudioFonts"
 
     @property
     def client_settings_folder_path(self):
-        return self.path / "ClientSettings"
+        return self._root_executables_path / "ClientSettings"
 
     @property
     def client_app_settings_file_path(self):
         return self.client_settings_folder_path / "ClientAppSettings.json"
+
+    @property
+    def reflection_metadata_file_path(self):
+        return self._root_resources_path / "ReflectionMetadata.xml"
+
+    @property
+    def ribbon_file_path(self):
+        return self._root_resources_path / "RobloxStudioRibbon.xml"
 
     async def get_app_settings(self):
         async with aiofiles.open(
