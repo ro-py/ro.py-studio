@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-import aiofiles
 import orjson
 
 from .environments import Version, VersionType
@@ -35,7 +34,7 @@ class StudioClient:
         return orjson.loads(data)
 
     def get_app_storage(self):
-        with aiofiles.open(
+        with open(
             file=self.paths.app_storage,
             mode="rb"
         ) as file:

@@ -123,7 +123,7 @@ class Version:
 
         fflag_overrides_json = orjson.dumps(overrides)
 
-        with aiofiles.open(
+        with open(
             file=self.client_app_settings_file_path,
             mode="wb"
         ) as client_app_settings_file:
