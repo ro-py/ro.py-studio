@@ -16,7 +16,7 @@ def main():
 
     studio_version = studio_client.get_version(version_path)
     dump_path = Path("./dump.json")
-    studio_version.generate_api_dump_to_path(dump_path)
+    studio_version.save_api_dump_to_path(dump_path)
     print(f"Dumped API to {dump_path}")
 
 

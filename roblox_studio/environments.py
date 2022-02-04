@@ -9,6 +9,8 @@ import string
 import tempfile
 import subprocess
 
+from .dump import APIDump
+
 
 _temp_folder = Path(tempfile.gettempdir())
 _seed_letters = list(string.ascii_letters)
@@ -150,7 +152,7 @@ class Version:
         ) as client_app_settings_file:
             client_app_settings_file.write(fflag_overrides_json)
 
-    def generate_api_dump_to_path(self, path: Path):
+    def save_api_dump_to_path(self, path: Path):
         """
         Generates an API dump for this Roblox Studio version and places it in the specified path.
         """
@@ -163,13 +165,12 @@ class Version:
             stderr=subprocess.PIPE
         )
 
-    def generate_api_dump(self, temp_path: Optional[Path] = None):
+    def generate_api_dump_json(self, temp_path: Optional[Path] = None) -> dict:
         """
-        Generates an API dump for this Roblox Studio version.
+        Generates an API dump for this Roblox Studio version and returns its raw JSON representation.
         If temp_path is not specified, the path is generated randomly in a temporary directory and subsequently deleted.
         If temp_path is specified, you are expected to handle the deletion of the file yourself.
         """
-
         needs_deletion = False
         if not temp_path:
             random_seed = [random.choice(_seed_letters) for _ in range(8)]
@@ -177,16 +178,24 @@ class Version:
             needs_deletion = True
 
         try:
-            self.generate_api_dump_to_path(temp_path)
+            self.save_api_dump_to_path(temp_path)
 
             with open(temp_path, "rb") as file:
                 dump_json = file.read()
 
-            dump_data = orjson.loads(dump_json)
-            return dump_data
+            return orjson.loads(dump_json)
         finally:
             if needs_deletion:
                 try:
                     os.remove(temp_path)
                 except FileNotFoundError:
                     pass
+
+    def generate_api_dump(self, temp_path: Optional[Path] = None) -> APIDump:
+        """
+        Generates an API dump for this Roblox Studio version and parses it.
+        If temp_path is not specified, the path is generated randomly in a temporary directory and subsequently deleted.
+        If temp_path is specified, you are expected to handle the deletion of the file yourself.
+        """
+
+        return APIDump(**self.generate_api_dump_json(temp_path=temp_path))

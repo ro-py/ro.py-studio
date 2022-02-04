@@ -16,7 +16,14 @@ def main():
 
     studio_version = studio_client.get_version(version_path)
     dump = studio_version.generate_api_dump()
-    print(dump)
+
+    for dump_class in dump.classes:
+        print(dump_class.name)
+        print(f"\tSuperclass: {dump_class.superclass}")
+        print(f"\tMemory Category: {dump_class.memory_category}")
+        print(f"\tMembers: {len(dump_class.members)}")
+        if dump_class.tags:
+            print(f"\tTags: {dump_class.tags}")
 
 
 if __name__ == "__main__":
