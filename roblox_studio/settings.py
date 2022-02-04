@@ -32,14 +32,12 @@ def get_key_values(key):
 def key_to_dictionary(key):
     result = {}
 
+    for value_name, value_data, value_type in get_key_values(key):
+        result[value_name] = value_data
+
     for subkey_name in get_subkeys(key):
         subkey = winreg.OpenKeyEx(key, subkey_name)
         result[subkey_name] = key_to_dictionary(subkey)
-
-        print(f"\t{subkey_name}")
-        for value_name, value_data, value_type in get_key_values(subkey):
-            result[subkey_name][value_name] = value_data
-            print(f"\t\t{value_name} = {value_data}")
 
     return result
 
@@ -59,10 +57,20 @@ def deep_rbx_dict_to_list(data):
         bad_dict[key] = deep_rbx_dict_to_list(value)
 
     bad_keys = set(bad_dict.keys())
+    numeric_keys = set()
+    start_point = 0 if 0 in bad_keys else 1
 
     for bad_key in bad_keys:
-        if not (bad_key.isnumeric() or bad_key == "size"):
-            return bad_dict
+        if bad_key.isnumeric():
+            numeric_keys.add(int(bad_key))
+        else:
+            if bad_key != "size":
+                # if there is a key in the dict other than size that is not numeric, this is not a proper list
+                return bad_dict
+
+    if numeric_keys != set(range(start_point, start_point + len(numeric_keys))):
+        # if the keys are not in proper order with no gaps, this is not a proper list
+        return bad_dict
 
     list_size = 0
     for bad_key in bad_keys:
@@ -75,7 +83,7 @@ def deep_rbx_dict_to_list(data):
 
     for bad_key in bad_keys:
         if bad_key.isnumeric():
-            new_list[int(bad_key) - 1] = bad_dict[bad_key]
+            new_list[int(bad_key) - start_point] = bad_dict[bad_key]
 
     return new_list
 
