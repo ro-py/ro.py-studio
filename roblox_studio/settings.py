@@ -57,8 +57,11 @@ def deep_rbx_dict_to_list(data):
         bad_dict[key] = deep_rbx_dict_to_list(value)
 
     bad_keys = set(bad_dict.keys())
+
+    if "size" not in bad_keys:
+        return bad_dict
+
     numeric_keys = set()
-    start_point = 0 if 0 in bad_keys else 1
 
     for bad_key in bad_keys:
         if bad_key.isnumeric():
@@ -67,14 +70,6 @@ def deep_rbx_dict_to_list(data):
             if bad_key != "size":
                 # if there is a key in the dict other than size that is not numeric, this is not a proper list
                 return bad_dict
-
-    if len(numeric_keys) == 0 and "size" not in bad_keys:
-        # if it's empty and has no size, assume it's a dict.
-        return bad_dict
-
-    if numeric_keys != set(range(start_point, start_point + len(numeric_keys))):
-        # if the keys are not in proper order with no gaps, this is not a proper list
-        return bad_dict
 
     list_size = 0
     for bad_key in bad_keys:
@@ -87,7 +82,7 @@ def deep_rbx_dict_to_list(data):
 
     for bad_key in bad_keys:
         if bad_key.isnumeric():
-            new_list[int(bad_key) - start_point] = bad_dict[bad_key]
+            new_list[int(bad_key) - 1] = bad_dict[bad_key]
 
     return new_list
 

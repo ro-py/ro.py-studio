@@ -104,3 +104,11 @@ class StudioClient:
             cookie_dict[url] = new_cookies
 
         return cookie_dict
+
+    def set_cookies(self, cookies: Dict[str, Dict[str, RobloxCookie]]):
+        raw_cookie_dict = {}
+
+        for url, url_cookies in cookies.items():
+            raw_cookie_dict[url] = {cookie_name: cookie.to_raw_string() for cookie_name, cookie in url_cookies.items()}
+
+        return raw_cookie_dict
