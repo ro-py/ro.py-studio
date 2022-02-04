@@ -68,6 +68,10 @@ def deep_rbx_dict_to_list(data):
                 # if there is a key in the dict other than size that is not numeric, this is not a proper list
                 return bad_dict
 
+    if len(numeric_keys) == 0 and "size" not in bad_keys:
+        # if it's empty and has no size, assume it's a dict.
+        return bad_dict
+
     if numeric_keys != set(range(start_point, start_point + len(numeric_keys))):
         # if the keys are not in proper order with no gaps, this is not a proper list
         return bad_dict
