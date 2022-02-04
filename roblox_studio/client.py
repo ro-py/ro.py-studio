@@ -5,7 +5,6 @@ from typing import Dict, Any, Optional
 import orjson
 
 from .environments import Version, VersionType
-from .paths import StudioPaths
 from .storage import AppStorage
 
 _is_windows = os.name == "nt"
@@ -23,7 +22,28 @@ class StudioClient:
             else:
                 roblox_path = Path("~/Library").expanduser() / "Roblox"
 
-        self.paths: StudioPaths = StudioPaths(roblox_path)
+        self.path: Path = roblox_path
+
+
+    @property
+    def global_settings_file_path(self):
+        return self.path / "GlobalSettings_13.xml"
+
+    @property
+    def global_basic_settings_file_path(self):
+        return self.path / "GlobalBasicSettings_13.xml"
+
+    @property
+    def analystics_settings_file_path(self):
+        return self.path / "AnalysticsSettings.xml"
+
+    @property
+    def client_settings_folder_path(self):
+        return self.path / "ClientSettings"
+
+    @property
+    def studio_app_settings_file_path(self):
+        return self.client_settings_folder_path / "StudioAppSettings.json"
 
     def get_cached_fflags(self) -> Dict[str, Any]:
         with open(
@@ -52,6 +72,5 @@ class StudioClient:
 
         return Version(
             path=path,
-            paths=self.paths,
             version_type=version_type
         )

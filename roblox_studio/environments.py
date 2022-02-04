@@ -5,8 +5,6 @@ from typing import Dict, Any
 import os
 import orjson
 
-from .paths import StudioPaths
-
 
 class VersionType(Enum):
     windows = "windows"
@@ -20,10 +18,9 @@ class VersionType(Enum):
 
 
 class Version:
-    def __init__(self, path: Path, paths: StudioPaths, version_type: VersionType):
+    def __init__(self, path: Path, version_type: VersionType):
         self.path: Path = path
         self.version_type: VersionType = version_type
-        self._paths: StudioPaths = paths
 
     @property
     def app_settings_file_path(self):

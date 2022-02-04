@@ -1,10 +1,8 @@
 from typing import Optional
 from pathlib import Path
 import os
-import asyncio
 
 from roblox_studio import StudioClient
-from roblox_studio.environments import Version
 
 
 def main():
@@ -12,7 +10,7 @@ def main():
 
     version_path: Optional[Path] = None
     if os.name == "nt":
-        version_path = studio_client.paths.versions / "version-HASH"
+        version_path = Path(os.getenv("LocalAppData")) / "Roblox" / "Versions" / "version-HASH"
     elif os.name == "posix":
         version_path = Path("/Applications/RobloxStudio.app")
 
