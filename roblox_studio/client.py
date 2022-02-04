@@ -6,6 +6,8 @@ import orjson
 
 from .environments import Version, VersionType
 from .storage import AppStorage
+from .cookie import RobloxCookie
+from .settings import get_raw_settings
 
 _is_windows = os.name == "nt"
 _is_posix = os.name == "posix"
@@ -81,3 +83,24 @@ class StudioClient:
             path=path,
             version_type=version_type
         )
+
+    def get_cookies(self) -> Dict[str, Dict[str, RobloxCookie]]:
+        """
+        Gets the stored cookies for the current Roblox session.
+
+        Returns:
+            A dictionary where the keys are cookie hosts (e.g. "roblox.com") and the values are dictionaries where the
+            keys are the names of the cookie (e.g. ".ROBLOSECURITY") and the values are the RobloxCookie objects themselves.
+
+            Example: {"roblox.com": {".ROBLOSECURITY": RobloxCookie}}
+        """
+        cookie_dict = {}
+        raw_cookie_dict = get_raw_settings("RobloxStudioBrowser")
+
+        for url, raw_cookies in raw_cookie_dict.items():
+            new_cookies = {}
+            for cookie_name, raw_cookie_value in raw_cookies.items():
+                new_cookies[cookie_name] = RobloxCookie.from_raw_string(raw_cookie_value)
+            cookie_dict[url] = new_cookies
+
+        return cookie_dict
