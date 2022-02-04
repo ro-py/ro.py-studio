@@ -24,7 +24,6 @@ class StudioClient:
 
         self.path: Path = roblox_path
 
-
     @property
     def global_settings_file_path(self):
         return self.path / "GlobalSettings_13.xml"
@@ -47,16 +46,16 @@ class StudioClient:
 
     def get_cached_fflags(self) -> Dict[str, Any]:
         with open(
-            file=self.paths.studio_app_settings,
-            mode="rb"
+                file=self.paths.studio_app_settings,
+                mode="rb"
         ) as file:
             data = file.read()
         return orjson.loads(data)
 
     def get_app_storage(self):
         with open(
-            file=self.paths.app_storage,
-            mode="rb"
+                file=self.paths.app_storage,
+                mode="rb"
         ) as file:
             data = file.read()
         return AppStorage(orjson.loads(data))

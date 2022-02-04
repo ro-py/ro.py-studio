@@ -1,16 +1,15 @@
+import os
+import random
+import string
+import subprocess
+import tempfile
 from enum import Enum
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-import os
 import orjson
-import random
-import string
-import tempfile
-import subprocess
 
 from .dump import APIDump
-
 
 _temp_folder = Path(tempfile.gettempdir())
 _seed_letters = list(string.ascii_letters)
@@ -147,8 +146,8 @@ class Version:
         fflag_overrides_json = orjson.dumps(overrides)
 
         with open(
-            file=self.client_app_settings_file_path,
-            mode="wb"
+                file=self.client_app_settings_file_path,
+                mode="wb"
         ) as client_app_settings_file:
             client_app_settings_file.write(fflag_overrides_json)
 
@@ -199,3 +198,39 @@ class Version:
         """
 
         return APIDump(**self.generate_api_dump_json(temp_path=temp_path))
+
+    def launch(
+            self,
+            *,
+            file: Optional[Path] = None,
+            base_url: Optional[str] = None,
+            disable_user_plugins: bool = False,
+    ):
+        """
+        Launches Roblox Studio and returns its launch process.
+
+        Arguments:
+            file: The file to launch Studio with, like a rbxl file.
+            base_url: A base URL to use when sending requests. Default is "roblox.com".
+            disable_user_plugins: Disables the loading of all local or remote user plugins.
+        """
+
+        args = [self.binary_file_path]
+
+        if file:
+            args.append(file)
+
+        if base_url:
+            args.append("-baseUrl")
+            args.append(base_url)
+
+        if disable_user_plugins:
+            args.append("-disableLoadUserPlugins")
+
+        process = subprocess.Popen(
+            args=args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+        return process

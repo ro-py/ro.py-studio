@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Literal, Union
+
 from pydantic import BaseModel, Field
 
 
@@ -97,7 +98,8 @@ class ClassMemberCallback(BaseModel):
 
 
 class APIDumpClass(BaseModel):
-    members: List[Union[ClassMemberProperty, ClassMemberFunction, ClassMemberEvent, ClassMemberCallback]] = Field(alias="Members")
+    members: List[Union[ClassMemberProperty, ClassMemberFunction, ClassMemberEvent, ClassMemberCallback]] = Field(
+        alias="Members")
     tags: Optional[List[ClassTag]] = Field(None, alias="Tags")
     superclass: str = Field(alias="Superclass")
     name: str = Field(alias="Name")
