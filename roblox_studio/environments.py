@@ -1,10 +1,17 @@
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import os
 import orjson
+import random
+import string
+import tempfile
 import subprocess
+
+
+_temp_folder = Path(tempfile.gettempdir())
+_seed_letters = list(string.ascii_letters)
 
 
 class VersionType(Enum):
@@ -155,3 +162,31 @@ class Version:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
+
+    def generate_api_dump(self, temp_path: Optional[Path] = None):
+        """
+        Generates an API dump for this Roblox Studio version.
+        If temp_path is not specified, the path is generated randomly in a temporary directory and subsequently deleted.
+        If temp_path is specified, you are expected to handle the deletion of the file yourself.
+        """
+
+        needs_deletion = False
+        if not temp_path:
+            random_seed = [random.choice(_seed_letters) for _ in range(8)]
+            temp_path = _temp_folder / f"{random_seed}_dump.json"
+            needs_deletion = True
+
+        try:
+            self.generate_api_dump_to_path(temp_path)
+
+            with open(temp_path, "rb") as file:
+                dump_json = file.read()
+
+            dump_data = orjson.loads(dump_json)
+            return dump_data
+        finally:
+            if needs_deletion:
+                try:
+                    os.remove(temp_path)
+                except FileNotFoundError:
+                    pass
