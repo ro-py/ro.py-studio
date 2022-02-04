@@ -17,6 +17,8 @@ def main():
     studio_version = studio_client.get_version(version_path)
     process = studio_version.launch()
     print(f"🚀 Launched Roblox Studio with process ID {process.pid}")
+    process.wait()
+    print("Studio closed.")
 
 
 if __name__ == "__main__":
