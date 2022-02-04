@@ -4,6 +4,7 @@ from typing import Dict, Any
 
 import os
 import orjson
+import subprocess
 
 
 class VersionType(Enum):
@@ -100,7 +101,19 @@ class Version:
     def ribbon_file_path(self):
         return self._root_resources_path / "RobloxStudioRibbon.xml"
 
+    @property
+    def binary_file_path(self):
+        if self.version_type == VersionType.macos:
+            return self._root_executables_path / "RobloxStudio"
+        else:
+            return self._root_resources_path / "RobloxStudioBeta.exe"
+
     def get_fflag_overrides(self) -> Dict[str, Any]:
+        """
+        Gets the active FFlag overrides for this Studio version.
+        If no overrides have been set, an empty dictionary is returned.
+        """
+
         try:
             with open(
                     file=self.client_app_settings_file_path,
@@ -113,6 +126,10 @@ class Version:
             return {}
 
     def set_fflag_overrides(self, overrides: Dict[str, Any]):
+        """
+        Sets the FFlag overrides for this Studio version.
+        """
+
         try:
             os.mkdir(self.client_settings_folder_path)
         except FileExistsError:
@@ -125,3 +142,16 @@ class Version:
             mode="wb"
         ) as client_app_settings_file:
             client_app_settings_file.write(fflag_overrides_json)
+
+    def generate_api_dump_to_path(self, path: Path):
+        """
+        Generates an API dump for this Roblox Studio version and places it in the specified path.
+        """
+
+        return subprocess.run(
+            args=[
+                self.binary_file_path, "-API", str(path)
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
