@@ -7,10 +7,9 @@ import orjson
 
 from .environments import Version, VersionType
 from .paths import StudioPaths
-from .settings import Settings
 from .storage import AppStorage
 
-_is_windows = os.name == "windows"
+_is_windows = os.name == "nt"
 _is_posix = os.name == "posix"
 
 
@@ -26,28 +25,6 @@ class StudioClient:
                 roblox_path = Path("~/Library").expanduser() / "Roblox"
 
         self.paths: StudioPaths = StudioPaths(roblox_path)
-
-    async def get_settings(self) -> Settings:
-        async with aiofiles.open(
-                file=self.paths.global_settings,
-                mode="r"
-        ) as file:
-            markup = await file.read()
-
-        settings = Settings()
-        await settings.from_xml(markup)
-        return settings
-
-    async def get_basic_settings(self) -> Settings:
-        async with aiofiles.open(
-                file=self.paths.global_basic_settings,
-                mode="r"
-        ) as file:
-            markup = await file.read()
-
-        settings = Settings()
-        await settings.from_xml(markup)
-        return settings
 
     async def get_cached_fflags(self) -> Dict[str, Any]:
         async with aiofiles.open(

@@ -8,7 +8,6 @@ import aiofiles.os
 import orjson
 
 from .paths import StudioPaths
-from .settings import AppSettings
 
 
 class VersionType(Enum):
@@ -105,16 +104,6 @@ class Version:
     @property
     def ribbon_file_path(self):
         return self._root_resources_path / "RobloxStudioRibbon.xml"
-
-    async def get_app_settings(self):
-        async with aiofiles.open(
-                file=self.app_settings_file_path,
-                mode="r"
-        ) as file:
-            data = await file.read()
-        app_settings = AppSettings(self.path)
-        await app_settings.from_xml(data)
-        return app_settings
 
     async def get_fflag_overrides(self) -> Dict[str, Any]:
         try:
