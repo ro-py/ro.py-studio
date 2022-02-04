@@ -44,9 +44,17 @@ class StudioClient:
     def studio_app_settings_file_path(self):
         return self.client_settings_folder_path / "StudioAppSettings.json"
 
+    @property
+    def local_storage_folder_path(self):
+        return self.path / "LocalStorage"
+
+    @property
+    def app_settings_file_path(self):
+        return self.local_storage_folder_path / "appStorage.json"
+
     def get_cached_fflags(self) -> Dict[str, Any]:
         with open(
-                file=self.paths.studio_app_settings,
+                file=self.studio_app_settings_file_path,
                 mode="rb"
         ) as file:
             data = file.read()
@@ -54,7 +62,7 @@ class StudioClient:
 
     def get_app_storage(self):
         with open(
-                file=self.paths.app_storage,
+                file=self.app_settings_file_path,
                 mode="rb"
         ) as file:
             data = file.read()
