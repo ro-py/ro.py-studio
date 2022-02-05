@@ -7,11 +7,14 @@ from enum import Enum
 from re import compile
 from typing import List, Optional, Union
 
+from yarl import URL
+from aiohttp import ClientSession
 from dateutil.parser import parse
-from roblox import Client
-from roblox.utilities.shared import ClientSharedObject
 
 from .branches import RobloxBranch
+
+cdn_url = URL("https://setup.rbxcdn.com/")
+mac_cdn_url = cdn_url / "mac"
 
 git_hash_pattern = compile(r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*?), file version: ([0123456789, ]*), "
                            r"git hash: ?([^ ]*)")
@@ -42,9 +45,9 @@ class DeploymentType(Enum):
 
 
 class DeploymentPackage:
-    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, deployment: Deployment, lines: List[str]):
+    def __init__(self, client: DeploymentClient, branch: RobloxBranch, deployment: Deployment, lines: List[str]):
         self._branch: RobloxBranch = branch
-        self._shared: ClientSharedObject = shared
+        self._client: DeploymentClient = client
         self._deployment: Deployment = deployment
 
         self.name: str = lines[0]
@@ -52,18 +55,15 @@ class DeploymentPackage:
         self.compressed_size: int = int(lines[2])
         self.size: int = int(lines[3])
 
-    def get_url(self):
-        return self._shared.url_generator.get_url(
-            subdomain="s3",
-            base_url="amazonaws.com",
-            path=f"setup.{self._branch.value}.com/{self._deployment.version_hash}-{self.name}"
-        )
+    @property
+    def url(self):
+        return cdn_url / f"{self._deployment.version_hash}-{self.name}"
 
 
 class DeploymentPackages:
-    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, deployment: Deployment, packages_data: str):
+    def __init__(self, client: DeploymentClient, branch: RobloxBranch, deployment: Deployment, packages_data: str):
         self._branch: RobloxBranch = branch
-        self._shared: ClientSharedObject = shared
+        self._client: DeploymentClient = client
         self._deployment: Deployment = deployment
 
         self.packages: List[DeploymentPackage] = []
@@ -76,7 +76,7 @@ class DeploymentPackages:
         for i in range(0, len(packages_file_lines), 4):
             file_lines = packages_file_lines[i:i + 4]
             self.packages.append(DeploymentPackage(
-                shared=self._shared,
+                client=self._client,
                 branch=self._branch,
                 deployment=self._deployment,
                 lines=file_lines
@@ -84,9 +84,9 @@ class DeploymentPackages:
 
 
 class Deployment:
-    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, history_line: str):
+    def __init__(self, client: DeploymentClient, branch: RobloxBranch, history_line: str):
         self._branch: RobloxBranch = branch
-        self._shared: ClientSharedObject = shared
+        self._client: DeploymentClient = client
 
         self.deployment_type: DeploymentType
         self.version_hash: str
@@ -126,26 +126,19 @@ class Deployment:
             self.timestamp = parse(f"{date_string} {time_string}")
 
     async def get_packages(self) -> DeploymentPackages:
-        packages_response = await self._shared.requests.get(
-            url=self._shared.url_generator.get_url(
-                subdomain="s3",
-                base_url="amazonaws.com",
-                path=f"setup.{self._branch.value}.com/{self.version_hash}-rbxPkgManifest.txt"
+        async with self._client.session.get(cdn_url / f"{self.version_hash}-rbxPkgManifest.txt") as packages_response:
+            return DeploymentPackages(
+                client=self._client,
+                branch=self._branch,
+                deployment=self,
+                packages_data=packages_response.text
             )
-        )
-
-        return DeploymentPackages(
-            branch=self._branch,
-            shared=self._shared,
-            deployment=self,
-            packages_data=packages_response.text
-        )
 
 
 class DeploymentRevert:
-    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, history_line: str):
+    def __init__(self, client: DeploymentClient, branch: RobloxBranch, history_line: str):
         self._branch: RobloxBranch = branch
-        self._shared: ClientSharedObject = shared
+        self._client: DeploymentClient = client
 
         self.deployment_type: DeploymentType
         self.version_hash: str
@@ -170,8 +163,8 @@ class DeploymentRevert:
 
 
 class DeploymentHistory:
-    def __init__(self, shared: ClientSharedObject, branch: RobloxBranch, history_data: str):
-        self._shared: ClientSharedObject = shared
+    def __init__(self, client: DeploymentClient, branch: RobloxBranch, history_data: str):
+        self._client: DeploymentClient = client
         self._branch: RobloxBranch = branch
         self.history: List[Union[Deployment, DeploymentRevert]] = []
 
@@ -192,13 +185,13 @@ class DeploymentHistory:
                 try:
                     if history_subline.startswith("New"):
                         self.history.append(Deployment(
-                            shared=self._shared,
+                            client=self._client,
                             branch=self._branch,
                             history_line=history_subline
                         ))
                     elif history_subline.startswith("Revert"):
                         self.history.append(DeploymentRevert(
-                            shared=self._shared,
+                            client=self._client,
                             branch=self._branch,
                             history_line=history_subline
                         ))
@@ -214,21 +207,24 @@ class DeploymentHistory:
 
 
 class DeploymentClient:
-    def __init__(self, client: Client):
-        self._roblox: Client = client
-        self._shared: ClientSharedObject = self._roblox._shared
+    def __init__(self):
+        self.session = ClientSession(
+            headers={
+                "User-Agent": "Roblox/WinInet"
+            }
+        )
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.session.close()
 
     async def get_deployments(self, branch: RobloxBranch, operating_system: OperatingSystem):
-        history_response = await self._roblox.requests.get(
-            url=self._roblox.url_generator.get_url(
-                subdomain="s3",
-                base_url="amazonaws.com",
-                path=f"setup.{branch.value}.com/mac/DeployHistory.txt" if operating_system == OperatingSystem.mac else
-                f"setup.{branch.value}.com/DeployHistory.txt"
+        async with self.session.get(cdn_url / "DeployHistory.txt" if operating_system == OperatingSystem.windows else
+                                    mac_cdn_url / "DeployHistory.txt") as history_response:
+            return DeploymentHistory(
+                client=self,
+                branch=branch,
+                history_data=await history_response.text(encoding="utf-8")
             )
-        )
-        return DeploymentHistory(
-            shared=self._shared,
-            branch=branch,
-            history_data=history_response.text
-        )
