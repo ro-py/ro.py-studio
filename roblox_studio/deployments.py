@@ -11,7 +11,7 @@ from yarl import URL
 from aiohttp import ClientSession
 from dateutil.parser import parse
 
-from .branches import RobloxBranch
+from .branches import RobloxBranch, roblox_branch_to_url
 
 cdn_url = URL("https://setup.rbxcdn.com/")
 mac_cdn_url = cdn_url / "mac"
@@ -31,17 +31,31 @@ class OperatingSystem(Enum):
 
 
 class DeploymentType(Enum):
-    rcc_service = "RccService"
+    rcc_service = "rcc_service"
 
-    client = "Client"
-    windows_player = "WindowsPlayer"
+    client = "client"
+    windows_player = "windows_player"
 
-    studio = "Studio"
-    studio_64 = "Studio64"
-    studio_beta = "StudioBeta"
-    mfc_studio = "MFCStudio"
+    studio = "studio"
+    studio_64 = "studio_64"
+    studio_beta = "studio_beta"
+    mfc_studio = "mfc_studio"
 
-    windows_mfc_player_and_studio = "windows-mfc-player-and-studio"
+    windows_mfc_player_and_studio = "windows_mfc_player_and_studio"
+
+
+_log_name_to_deployment_type = {
+    "RccService": DeploymentType.rcc_service,
+    "Client": DeploymentType.client,
+    "WindowsPlayer": DeploymentType.windows_player,
+
+    "Studio": DeploymentType.studio,
+    "Studio64": DeploymentType.studio_64,
+    "StudioBeta": DeploymentType.studio_beta,
+    "MFCStudio": DeploymentType.mfc_studio,
+
+    "windows-mfc-player-and-studio": DeploymentType.windows_mfc_player_and_studio
+}
 
 
 class DeploymentPackage:
@@ -98,7 +112,7 @@ class Deployment:
             match = git_hash_pattern.search(string=history_line)
             assert match
 
-            self.deployment_type = DeploymentType(match.group(1))
+            self.deployment_type = _log_name_to_deployment_type.get(match.group(1))
             self.version_hash = match.group(2)
             date_string = match.group(3)
             time_string = match.group(4)
@@ -109,7 +123,7 @@ class Deployment:
             match = file_version_pattern.search(string=history_line)
             assert match
 
-            self.deployment_type = DeploymentType(match.group(1))
+            self.deployment_type = _log_name_to_deployment_type.get(match.group(1))
             self.version_hash = match.group(2)
             date_string = match.group(3)
             time_string = match.group(4)
@@ -119,7 +133,7 @@ class Deployment:
             match = fallback_pattern.search(string=history_line)
             assert match
 
-            self.deployment_type = DeploymentType(match.group(1))
+            self.deployment_type = _log_name_to_deployment_type.get(match.group(1))
             self.version_hash = match.group(2)
             date_string = match.group(3)
             time_string = match.group(4)
@@ -127,6 +141,7 @@ class Deployment:
 
     async def get_packages(self) -> DeploymentPackages:
         async with self._client.session.get(cdn_url / f"{self.version_hash}-rbxPkgManifest.txt") as packages_response:
+            packages_response.raise_for_status()
             return DeploymentPackages(
                 client=self._client,
                 branch=self._branch,
@@ -148,14 +163,14 @@ class DeploymentRevert:
 
         if history_line.startswith("Reverting"):
             match = reverting_pattern.search(history_line)
-            self.deployment_type = DeploymentType(match.group(1))
+            self.deployment_type = _log_name_to_deployment_type.get(match.group(1))
             self.version_hash = match.group(2)
             date_string = match.group(3)
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
         else:
             match = revert_pattern.search(history_line)
-            self.deployment_type = DeploymentType(match.group(1))
+            self.deployment_type = _log_name_to_deployment_type.get(match.group(1))
             self.version_hash = match.group(2)
             date_string = match.group(3)
             time_string = match.group(4)
@@ -221,8 +236,11 @@ class DeploymentClient:
         await self.session.close()
 
     async def get_deployments(self, branch: RobloxBranch, operating_system: OperatingSystem):
-        async with self.session.get(cdn_url / "DeployHistory.txt" if operating_system == OperatingSystem.windows else
-                                    mac_cdn_url / "DeployHistory.txt") as history_response:
+        branch_url = roblox_branch_to_url.get(branch)
+        branch_os_url = branch_url / "mac" if operating_system == OperatingSystem.mac else branch_url
+
+        async with self.session.get(branch_os_url / "DeployHistory.txt") as history_response:
+            history_response.raise_for_status()
             return DeploymentHistory(
                 client=self,
                 branch=branch,
