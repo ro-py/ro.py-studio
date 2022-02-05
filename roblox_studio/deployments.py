@@ -131,7 +131,7 @@ class Deployment:
                 client=self._client,
                 branch=self._branch,
                 deployment=self,
-                packages_data=packages_response.text
+                packages_data=await packages_response.text(encoding="utf-8")
             )
 
 
