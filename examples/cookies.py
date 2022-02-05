@@ -1,7 +1,3 @@
-from typing import Optional
-from pathlib import Path
-import os
-
 from roblox_studio import StudioClient
 
 

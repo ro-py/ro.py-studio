@@ -1,5 +1,5 @@
-from pathlib import Path
 import os
+from pathlib import Path
 
 if os.name == "nt":
     import winreg
