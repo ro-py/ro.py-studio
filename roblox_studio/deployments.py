@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# import warnings
+
 from datetime import datetime
 from enum import Enum
 from re import compile
@@ -18,6 +20,11 @@ fallback_pattern = compile(r"New ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*)")
 
 reverting_pattern = compile(r"Reverting ([^ ]*?) to version (version-[^ ]*) at ([^ ]*) (.*)")
 revert_pattern = compile(r"Revert ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*)")
+
+
+class OperatingSystem(Enum):
+    windows = "windows"
+    mac = "mac"
 
 
 class DeploymentType(Enum):
@@ -89,6 +96,7 @@ class Deployment:
 
         if "git hash" in history_line:
             match = git_hash_pattern.search(string=history_line)
+            assert match
 
             self.deployment_type = DeploymentType(match.group(1))
             self.version_hash = match.group(2)
@@ -99,6 +107,7 @@ class Deployment:
             self.git_hash = match.group(6)
         elif "file version" in history_line or "file verion" in history_line:
             match = file_version_pattern.search(string=history_line)
+            assert match
 
             self.deployment_type = DeploymentType(match.group(1))
             self.version_hash = match.group(2)
@@ -108,6 +117,7 @@ class Deployment:
             self.bootstrapper_version = match.group(5)
         else:
             match = fallback_pattern.search(string=history_line)
+            assert match
 
             self.deployment_type = DeploymentType(match.group(1))
             self.version_hash = match.group(2)
@@ -179,18 +189,22 @@ class DeploymentHistory:
                 if history_subline == "Done!" or history_subline == "Error!":
                     continue
 
-                if history_subline.startswith("New"):
-                    self.history.append(Deployment(
-                        shared=self._shared,
-                        branch=self._branch,
-                        history_line=history_subline
-                    ))
-                elif history_subline.startswith("Revert"):
-                    self.history.append(DeploymentRevert(
-                        shared=self._shared,
-                        branch=self._branch,
-                        history_line=history_subline
-                    ))
+                try:
+                    if history_subline.startswith("New"):
+                        self.history.append(Deployment(
+                            shared=self._shared,
+                            branch=self._branch,
+                            history_line=history_subline
+                        ))
+                    elif history_subline.startswith("Revert"):
+                        self.history.append(DeploymentRevert(
+                            shared=self._shared,
+                            branch=self._branch,
+                            history_line=history_subline
+                        ))
+                except AssertionError:
+                    pass
+                    # warnings.warn(f"Failed to parse string {history_subline!r}")
 
     def get_latest_version(self, deployment_type: DeploymentType) -> Optional[Deployment]:
         for deployment in reversed(self.history):
@@ -204,12 +218,13 @@ class DeploymentClient:
         self._roblox: Client = client
         self._shared: ClientSharedObject = self._roblox._shared
 
-    async def get_deployments(self, branch: RobloxBranch):
+    async def get_deployments(self, branch: RobloxBranch, operating_system: OperatingSystem):
         history_response = await self._roblox.requests.get(
             url=self._roblox.url_generator.get_url(
                 subdomain="s3",
                 base_url="amazonaws.com",
-                path=f"setup.{branch.value}.com/DeployHistory.txt"
+                path=f"setup.{branch.value}.com/mac/DeployHistory.txt" if operating_system == OperatingSystem.mac else
+                f"setup.{branch.value}.com/DeployHistory.txt"
             )
         )
         return DeploymentHistory(

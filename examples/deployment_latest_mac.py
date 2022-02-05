@@ -12,7 +12,7 @@ roblox_deploy = DeploymentClient(roblox)
 async def main():
     deployments = await roblox_deploy.get_deployments(
         branch=RobloxBranch.production,
-        operating_system=OperatingSystem.windows
+        operating_system=OperatingSystem.mac
     )
     deployment = deployments.get_latest_version(DeploymentType.studio)
     print(f"Version: {deployment.version_hash}")
