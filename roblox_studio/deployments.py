@@ -5,13 +5,14 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from re import compile
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 
 from yarl import URL
 from aiohttp import ClientSession
 from dateutil.parser import parse
 
 from .branches import RobloxBranch, roblox_branch_to_url
+from .dump import APIDump
 
 cdn_url = URL("https://setup.rbxcdn.com/")
 mac_cdn_url = cdn_url / "mac"
@@ -28,6 +29,13 @@ revert_pattern = compile(r"Revert ([^ ]*?) (version-[^ ]*) at ([^ ]*) (.*)")
 class OperatingSystem(Enum):
     windows = "windows"
     mac = "mac"
+
+
+class BinaryType(Enum):
+    windows_player = "WindowsPlayer"
+    windows_studio = "WindowsStudio"
+    mac_player = "MacPlayer"
+    mac_studio = "MacStudio"
 
 
 class DeploymentType(Enum):
@@ -98,14 +106,21 @@ class DeploymentPackages:
 
 
 class Deployment:
-    def __init__(self, client: DeploymentClient, branch: RobloxBranch, history_line: str):
+    def __init__(
+            self,
+            client: DeploymentClient,
+            branch: RobloxBranch,
+            operating_system: OperatingSystem,
+            history_line: str
+    ):
         self._branch: RobloxBranch = branch
         self._client: DeploymentClient = client
+        self._operating_system: OperatingSystem = operating_system
 
         self.deployment_type: DeploymentType
         self.version_hash: str
         self.timestamp: datetime
-        self.bootstrapper_version: Optional[str] = None
+        self.version_number: Optional[Tuple[int, int, int, int]] = None
         self.git_hash: Optional[str] = None
 
         if "git hash" in history_line:
@@ -117,7 +132,7 @@ class Deployment:
             date_string = match.group(3)
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
-            self.bootstrapper_version = match.group(5)
+            self.version_number = tuple(int(piece.strip()) for piece in match.group(5).split(","))
             self.git_hash = match.group(6)
         elif "file version" in history_line or "file verion" in history_line:
             match = file_version_pattern.search(string=history_line)
@@ -128,7 +143,7 @@ class Deployment:
             date_string = match.group(3)
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
-            self.bootstrapper_version = match.group(5)
+            self.version_number = tuple(int(piece.strip()) for piece in match.group(5).split(","))
         else:
             match = fallback_pattern.search(string=history_line)
             assert match
@@ -139,7 +154,16 @@ class Deployment:
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
 
+    async def get_api_dump(self) -> APIDump:
+        branch_url = roblox_branch_to_url.get(self._branch)
+        branch_os_url = branch_url / "mac" if self._operating_system == OperatingSystem.mac else branch_url
+        async with self._client.session.get(branch_os_url / f"{self.version_hash}-API-Dump.json") as dump_response:
+            dump_response.raise_for_status()
+            return APIDump(**await dump_response.json())
+
     async def get_packages(self) -> DeploymentPackages:
+        assert self._operating_system == OperatingSystem.windows, "Cannot get packages for non-Windows installs"
+
         async with self._client.session.get(cdn_url / f"{self.version_hash}-rbxPkgManifest.txt") as packages_response:
             packages_response.raise_for_status()
             return DeploymentPackages(
@@ -151,9 +175,16 @@ class Deployment:
 
 
 class DeploymentRevert:
-    def __init__(self, client: DeploymentClient, branch: RobloxBranch, history_line: str):
+    def __init__(
+            self,
+            client: DeploymentClient,
+            branch: RobloxBranch,
+            operating_system: OperatingSystem,
+            history_line: str
+    ):
         self._branch: RobloxBranch = branch
         self._client: DeploymentClient = client
+        self._operating_system: OperatingSystem = operating_system
 
         self.deployment_type: DeploymentType
         self.version_hash: str
@@ -178,9 +209,17 @@ class DeploymentRevert:
 
 
 class DeploymentHistory:
-    def __init__(self, client: DeploymentClient, branch: RobloxBranch, history_data: str):
+    def __init__(
+            self,
+            client: DeploymentClient,
+            branch: RobloxBranch,
+            operating_system: OperatingSystem,
+            history_data: str
+    ):
         self._client: DeploymentClient = client
         self._branch: RobloxBranch = branch
+        self._operating_system: OperatingSystem = operating_system
+
         self.history: List[Union[Deployment, DeploymentRevert]] = []
 
         history_split = history_data.splitlines()
@@ -202,19 +241,21 @@ class DeploymentHistory:
                         self.history.append(Deployment(
                             client=self._client,
                             branch=self._branch,
+                            operating_system=self._operating_system,
                             history_line=history_subline
                         ))
                     elif history_subline.startswith("Revert"):
                         self.history.append(DeploymentRevert(
                             client=self._client,
                             branch=self._branch,
+                            operating_system=self._operating_system,
                             history_line=history_subline
                         ))
                 except AssertionError:
                     pass
                     # warnings.warn(f"Failed to parse string {history_subline!r}")
 
-    def get_latest_version(self, deployment_type: DeploymentType) -> Optional[Deployment]:
+    def get_latest_deployment(self, deployment_type: DeploymentType) -> Optional[Deployment]:
         for deployment in reversed(self.history):
             if deployment.deployment_type == deployment_type:
                 return deployment
@@ -244,5 +285,6 @@ class DeploymentClient:
             return DeploymentHistory(
                 client=self,
                 branch=branch,
+                operating_system=operating_system,
                 history_data=await history_response.text(encoding="utf-8")
             )
