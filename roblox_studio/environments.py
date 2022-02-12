@@ -235,7 +235,7 @@ class Version:
 
         return process
 
-    def resolve_rbxasset(self, path: str) -> Optional[Path]:
+    def resolve_rbxasset_to_path(self, path: str) -> Optional[Path]:
         """
         Resolves a rbxasset path, like /textures/face.png.
         This function does not ensure that the path does not escape the directory - do not call this function with
