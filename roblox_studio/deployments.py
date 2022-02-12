@@ -154,6 +154,9 @@ class Deployment:
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
 
+        if self.version_number and self.version_number[0] >= 2000:
+            self.version_number = None
+
     async def get_api_dump(self) -> APIDump:
         branch_url = roblox_branch_to_url.get(self._branch)
         branch_os_url = branch_url / "mac" if self._operating_system == OperatingSystem.mac else branch_url
