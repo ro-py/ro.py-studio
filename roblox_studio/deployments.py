@@ -12,7 +12,6 @@ from aiohttp import ClientSession
 from dateutil.parser import parse
 
 from .branches import RobloxBranch, roblox_branch_to_url
-from .version_number import VersionNumber
 from .dump import APIDump
 
 cdn_url = URL("https://setup.rbxcdn.com/")
@@ -121,7 +120,7 @@ class Deployment:
         self.deployment_type: DeploymentType
         self.version_hash: str
         self.timestamp: datetime
-        self.version_number: Optional[VersionNumber] = None
+        self.version_number: Optional[Tuple[int, int, int, int]] = None
         self.git_hash: Optional[str] = None
 
         if "git hash" in history_line:
@@ -133,7 +132,7 @@ class Deployment:
             date_string = match.group(3)
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
-            self.version_number = VersionNumber(tuple(int(piece.strip()) for piece in match.group(5).split(",")))
+            self.version_number = tuple(int(piece.strip()) for piece in match.group(5).split(","))
             self.git_hash = match.group(6)
         elif "file version" in history_line or "file verion" in history_line:
             match = file_version_pattern.search(string=history_line)
@@ -144,7 +143,7 @@ class Deployment:
             date_string = match.group(3)
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
-            self.version_number = VersionNumber(tuple(int(piece.strip()) for piece in match.group(5).split(",")))
+            self.version_number = tuple(int(piece.strip()) for piece in match.group(5).split(","))
         else:
             match = fallback_pattern.search(string=history_line)
             assert match
