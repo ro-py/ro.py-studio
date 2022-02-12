@@ -24,23 +24,23 @@ class StudioClient:
             else:
                 roblox_path = Path("~/Library").expanduser() / "Roblox"
 
-        self.path: Path = roblox_path
+        self.root_path: Path = roblox_path
 
     @property
     def global_settings_file_path(self):
-        return self.path / "GlobalSettings_13.xml"
+        return self.root_path / "GlobalSettings_13.xml"
 
     @property
     def global_basic_settings_file_path(self):
-        return self.path / "GlobalBasicSettings_13.xml"
+        return self.root_path / "GlobalBasicSettings_13.xml"
 
     @property
     def analystics_settings_file_path(self):
-        return self.path / "AnalysticsSettings.xml"
+        return self.root_path / "AnalysticsSettings.xml"
 
     @property
     def client_settings_folder_path(self):
-        return self.path / "ClientSettings"
+        return self.root_path / "ClientSettings"
 
     @property
     def studio_app_settings_file_path(self):
@@ -48,7 +48,14 @@ class StudioClient:
 
     @property
     def local_storage_folder_path(self):
-        return self.path / "LocalStorage"
+        return self.root_path / "LocalStorage"
+
+    @property
+    def logs_folder_path(self):
+        if os.name == "nt":
+            return self.root_path / "logs"
+        else:
+            return Path("~/Library").expanduser() / "Logs" / "Roblox"
 
     @property
     def app_settings_file_path(self):
