@@ -234,3 +234,19 @@ class Version:
         )
 
         return process
+
+    def resolve_rbxasset(self, path: str) -> Optional[Path]:
+        """
+        Resolves a rbxasset path, like /textures/face.png.
+        This function does not ensure that the path does not escape the directory - do not call this function with
+        unfiltered user input.
+        """
+        for base_path in [
+            self.platform_content_folder_path / "pc",
+            self.extra_content_folder_path,
+            self.content_folder_path
+        ]:
+            file_path = base_path / path
+            if file_path.exists():
+                return file_path
+        return None
