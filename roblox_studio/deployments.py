@@ -132,7 +132,9 @@ class Deployment:
             date_string = match.group(3)
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
-            self.version_number = tuple(int(piece.strip()) for piece in match.group(5).split(","))
+            version_string = match.group(5).strip()
+            if version_string:
+                self.version_number = tuple(int(piece.strip()) for piece in version_string.split(","))
             self.git_hash = match.group(6)
         elif "file version" in history_line or "file verion" in history_line:
             match = file_version_pattern.search(string=history_line)
@@ -143,7 +145,9 @@ class Deployment:
             date_string = match.group(3)
             time_string = match.group(4)
             self.timestamp = parse(f"{date_string} {time_string}")
-            self.version_number = tuple(int(piece.strip()) for piece in match.group(5).split(","))
+            version_string = match.group(5).strip()
+            if version_string:
+                self.version_number = tuple(int(piece.strip()) for piece in version_string.split(","))
         else:
             match = fallback_pattern.search(string=history_line)
             assert match
