@@ -161,17 +161,28 @@ class Deployment:
         if self.version_number and self.version_number[0] >= 2000:
             self.version_number = None
 
-    async def get_api_dump(self) -> APIDump:
+    def get_url(self, item: str):
         branch_url = roblox_branch_to_url.get(self._branch)
         branch_os_url = branch_url / "mac" if self._operating_system == OperatingSystem.mac else branch_url
-        async with self._client.session.get(branch_os_url / f"{self.version_hash}-API-Dump.json") as dump_response:
+        return branch_os_url / f"{self.version_hash}-{item}"
+
+    def get_root_zip(self):
+        if self.deployment_type in {DeploymentType.studio, DeploymentType.studio_64}:
+            return self.get_url("RobloxStudio.zip")
+        elif self.deployment_type == DeploymentType.client:
+            return self.get_url("RobloxApp.zip")
+        else:
+            raise NotImplementedError
+
+    async def get_api_dump(self) -> APIDump:
+        async with self._client.session.get(self.get_url("API-Dump.json")) as dump_response:
             dump_response.raise_for_status()
             return APIDump(**await dump_response.json())
 
     async def get_packages(self) -> DeploymentPackages:
         assert self._operating_system == OperatingSystem.windows, "Cannot get packages for non-Windows installs"
 
-        async with self._client.session.get(cdn_url / f"{self.version_hash}-rbxPkgManifest.txt") as packages_response:
+        async with self._client.session.get(self.get_url("rbxPkgManifest.txt")) as packages_response:
             packages_response.raise_for_status()
             return DeploymentPackages(
                 client=self._client,
