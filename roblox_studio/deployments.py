@@ -166,9 +166,9 @@ class Deployment:
         branch_os_url = branch_url / "mac" if self._operating_system == OperatingSystem.mac else branch_url
         return branch_os_url / f"{self.version_hash}-{item}"
 
-    def get_root_zip(self):
+    def get_app_zip_url(self):
         if self.deployment_type in {DeploymentType.studio, DeploymentType.studio_64}:
-            return self.get_url("RobloxStudio.zip")
+            return self.get_url("RobloxStudioApp.zip")
         elif self.deployment_type == DeploymentType.client:
             return self.get_url("RobloxApp.zip")
         else:
