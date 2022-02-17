@@ -79,7 +79,7 @@ class DeploymentPackage:
 
     @property
     def url(self):
-        return cdn_url / f"{self._deployment.version_hash}-{self.name}"
+        return self._deployment.get_url(self.name)
 
 
 class DeploymentPackages:
